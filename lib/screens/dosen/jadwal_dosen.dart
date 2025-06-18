@@ -1,4 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_kelompok2/screens/dosen/detail_kelas.dart'; // Import halaman Detail Kelas
+
+// Model data untuk menyimpan detail kelas yang bisa diedit
+class ClassDetails {
+  String sesi;
+  String metode;
+  String tanggalJadwal;
+  String ruangKuliah;
+  String waktuSelesai;
+  String keteranganRuangKuliah;
+  String? jenisPertemuan;
+  String urlKuliahOnline;
+  String? status;
+
+  ClassDetails({
+    this.sesi = '',
+    this.metode = '',
+    this.tanggalJadwal = '',
+    this.ruangKuliah = '',
+    this.waktuSelesai = '',
+    this.keteranganRuangKuliah = '',
+    this.jenisPertemuan,
+    this.urlKuliahOnline = '',
+    this.status,
+  });
+
+  // Metode untuk mereset semua nilai ke default/kosong
+  void reset() {
+    sesi = '';
+    metode = '';
+    tanggalJadwal = '';
+    ruangKuliah = '';
+    waktuSelesai = '';
+    keteranganRuangKuliah = '';
+    jenisPertemuan = null;
+    urlKuliahOnline = '';
+    status = null;
+  }
+}
 
 class MengajarHariIniPage extends StatefulWidget {
   const MengajarHariIniPage({super.key});
@@ -9,6 +48,7 @@ class MengajarHariIniPage extends StatefulWidget {
 
 class _MengajarHariIniPageState extends State<MengajarHariIniPage> {
   bool _isClassEntered = false; // State untuk melacak apakah tombol "Masuk Kelas" sudah ditekan
+  ClassDetails _currentClassDetails = ClassDetails(); // Instance data kelas yang akan disimpan
 
   // Fungsi untuk menampilkan dialog popup
   void _showClassOpenedDialog(BuildContext context) {
@@ -133,12 +173,16 @@ class _MengajarHariIniPageState extends State<MengajarHariIniPage> {
                                     print('Tombol Akhiri Kelas ditekan!');
                                     setState(() {
                                       _isClassEntered = false; // Set kembali ke belum masuk kelas
+                                      _currentClassDetails.reset(); // Reset semua data kelas
                                     });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Kelas telah diakhiri dan data direset.')),
+                                    );
                                   }
                                 : null, // Tidak berfungsi jika belum masuk kelas
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey[300], // Warna abu-abu saat tidak aktif
-                              foregroundColor: Colors.grey[700],
+                              backgroundColor: const Color.fromARGB(255, 255, 0, 0), // Warna abu-abu saat tidak aktif
+                              foregroundColor: const Color.fromARGB(255, 255, 255, 255),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -177,20 +221,33 @@ class _MengajarHariIniPageState extends State<MengajarHariIniPage> {
                         Expanded(
                           child: ElevatedButton(
                             onPressed: _isClassEntered
-                                ? () {
+                                ? () async {
                                     // Logika untuk tombol Detail Kelas
                                     print('Tombol Detail Kelas ditekan!');
-                                    // Anda bisa menavigasi ke halaman detail kelas di sini
+                                    // Navigasi ke DetailKelasPage dan tunggu hasilnya
+                                    final updatedDetails = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => DetailKelasPage(initialDetails: _currentClassDetails),
+                                      ),
+                                    );
+
+                                    // Perbarui state jika ada data yang dikembalikan
+                                    if (updatedDetails != null && updatedDetails is ClassDetails) {
+                                      setState(() {
+                                        _currentClassDetails = updatedDetails;
+                                      });
+                                    }
                                   }
                                 : null, // Tidak berfungsi jika belum masuk kelas
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey[300], // Warna abu-abu saat tidak aktif
-                              foregroundColor: Colors.grey[700],
+                              backgroundColor: _isClassEntered ? const Color(0xFF9FBADE) : Colors.grey[300], // Warna biru saat aktif, abu-abu saat tidak aktif
+                              foregroundColor: _isClassEntered ? Colors.white : Colors.grey[700], // Warna teks putih saat aktif, abu-abu saat tidak aktif
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              elevation: 0, // Tanpa shadow
+                              elevation: _isClassEntered ? 2 : 0, // Shadow hanya saat aktif
                             ),
                             child: const Text('Detail Kelas'),
                           ),
