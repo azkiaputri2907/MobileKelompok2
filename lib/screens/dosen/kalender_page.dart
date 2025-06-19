@@ -47,7 +47,7 @@ class _KalenderPageState extends State<KalenderPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFF9FBADE), // Warna AppBar yang serasi
+        backgroundColor: const Color(0xFF90CAF9), // Warna AppBar yang serasi
         elevation: 0, // Tanpa shadow untuk tampilan bersih
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white), // Warna ikon back

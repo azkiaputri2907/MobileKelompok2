@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_kelompok2/screens/dosen/detail_kelas.dart'; // Import halaman Detail Kelas
+// Pastikan Anda mengimpor DashboardDosen jika berada di file terpisah
+import 'package:mobile_kelompok2/screens/dosen/dashboard.dart'; // <--- Tambahkan ini
 
 // Model data untuk menyimpan detail kelas yang bisa diedit
 class ClassDetails {
@@ -82,10 +84,26 @@ class _MengajarHariIniPageState extends State<MengajarHariIniPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFFC8A2C8), // Warna AppBar yang serasi
+        backgroundColor: const Color(0xFF90CAF9), // Warna AppBar yang serasi
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white), // Warna ikon back
+        // VVVV Perubahan ada di sini VVVV
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // Ini akan kembali ke rute sebelumnya di stack navigasi.
+            // Jika sebelumnya dari DashboardDosen, maka akan kembali ke sana.
+            // Jika Anda ingin memastikan selalu kembali ke DashboardDosen()
+            // bahkan jika ada rute lain di atasnya, gunakan:
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const DashboardDosen()),
+              (Route<dynamic> route) => false, // Menghapus semua rute di bawahnya
+            );
+          },
+        ),
+        // ^^^^ Perubahan ada di sini ^^^^
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

@@ -125,7 +125,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               child: ElevatedButton(
                 onPressed: _nextPage,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 128, 99, 225), // Warna tombol sesuai login page
+                  backgroundColor: const Color(0xFF4682B4), // Warna tombol sesuai login page
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // Radius sudut sesuai login page
                   elevation: 3,
                 ),

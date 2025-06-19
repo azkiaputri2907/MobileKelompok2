@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_kelompok2/onboarding/onboarding_page.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -56,8 +58,11 @@ class _LoginPageState extends State<LoginPage> {
                         icon: const Icon(Icons.arrow_back, color: Colors.white),
                         onPressed: () {
                           // Handle back/close action
-                          Navigator.pop(context); // Contoh: kembali ke halaman sebelumnya
-                        },
+                        Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => const OnboardingPage()),
+                        (route) => false, // Menghapus semua route sebelumnya
+                                      );                        },
                       ),
                     ),
                     // Ilustrasi orang dengan bulan
@@ -159,7 +164,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF6A5AE0), width: 2),
+                                borderSide: const BorderSide(color: Color(0xFF4682B4), width: 2),
                               ),
                               isDense: true, // Membuat TextField lebih padat
                               contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10), // Mengurangi padding internal
@@ -188,7 +193,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: ElevatedButton(
                               onPressed: _login,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color.fromARGB(255, 128, 99, 225), // Warna kuning sesuai gambar
+                                backgroundColor: const Color(0xFF4682B4), // Warna kuning sesuai gambar
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),

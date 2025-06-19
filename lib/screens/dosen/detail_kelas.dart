@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Import untuk DateFormat
+import 'package:mobile_kelompok2/screens/dosen/detail_kelas.dart'; // Import ClassDetails (penting untuk data persisten)
 import 'package:mobile_kelompok2/screens/dosen/jadwal_dosen.dart';
-// Asumsi JadwalDosenPage adalah MengajarHariIniPage atau KalenderPage, atau sebuah halaman terpisah.
-// Jika itu halaman dashboard, maka impornya sudah ada.
-// Jika itu JadwalDosen.dart yang Anda maksud adalah dashboard_dosen.dart, saya tidak perlu mengimpornya lagi di sini.
-// Saya akan menempatkan placeholder halaman navigasi di dalam file ini untuk self-containment,
-// namun dalam aplikasi nyata, halaman-halaman ini sebaiknya berada di file terpisah.
+import 'package:mobile_kelompok2/screens/dosen/peserta.dart'; // Import halaman Peserta Kelas (sesuai permintaan)
+import 'package:mobile_kelompok2/screens/dosen/presensi.dart'; // Import halaman Peserta Kelas (sesuai permintaan)
+import 'package:mobile_kelompok2/screens/dosen/dashboard.dart'; // Import ClassDetails (penting untuk data persisten)
 
-// Placeholder pages for Drawer navigation - Defined here for self-containment of this immersive
+
+// Placeholder pages for Drawer navigation.
+// Dalam aplikasi nyata, halaman-halaman ini sebaiknya berada di file terpisah
+// dan diimpor di sini.
 class JadwalPerkuliahanPage extends StatelessWidget {
   const JadwalPerkuliahanPage({super.key});
 
@@ -20,29 +22,19 @@ class JadwalPerkuliahanPage extends StatelessWidget {
   }
 }
 
-class PesertaKelasPage extends StatelessWidget {
-  const PesertaKelasPage({super.key});
+// PesertaKelasPage sudah diimpor dari file peserta.dart, jadi tidak perlu didefinisikan ulang di sini.
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Peserta Kelas')),
-      body: const Center(child: Text('Konten Peserta Kelas')),
-    );
-  }
-}
+// class PresensiKelasPage extends StatelessWidget {
+//   const PresensiKelasPage({super.key});
 
-class PresensiKelasPage extends StatelessWidget {
-  const PresensiKelasPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Presensi Kelas')),
-      body: const Center(child: Text('Konten Presensi Kelas')),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: const Text('Presensi Kelas')),
+//       body: const Center(child: Text('Konten Presensi Kelas')),
+//     );
+//   }
+// }
 
 class NilaiPerkuliahanPage extends StatelessWidget {
   const NilaiPerkuliahanPage({super.key});
@@ -68,7 +60,7 @@ class DetailKelasPage extends StatefulWidget {
 }
 
 class _DetailKelasPageState extends State<DetailKelasPage> {
-  // Controller untuk setiap TextField
+  // Controller untuk setiap TextField yang tidak akan diedit
   final TextEditingController _programStudiController = TextEditingController(text: 'D3 - Teknik Informatika');
   final TextEditingController _mataKuliahController = TextEditingController(text: 'Administrasi Database');
   final TextEditingController _kurikulumController = TextEditingController(text: '2020');
@@ -77,6 +69,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
   final TextEditingController _namaKelasController = TextEditingController(text: '4E AXIOO');
   final TextEditingController _sistemKuliahController = TextEditingController(text: 'Reguler');
 
+  // Controllers untuk field yang bisa diedit (late karena diinisialisasi di initState)
   late TextEditingController _sesiController;
   late TextEditingController _metodeController;
   late TextEditingController _tanggalJadwalController;
@@ -85,6 +78,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
   late TextEditingController _keteranganRuangKuliahController;
   late TextEditingController _urlKuliahOnlineController;
   
+  // Variabel untuk menyimpan pilihan dropdown
   String? _selectedJenisPertemuan; 
   final List<String> _jenisPertemuanOptions = ['UAS', 'UTS', 'Materi', 'Praktek'];
 
@@ -98,7 +92,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
   @override
   void initState() {
     super.initState();
-    // Inisialisasi controllers dengan data dari initialDetails
+    // Inisialisasi controllers dan dropdown dengan data dari initialDetails
     _sesiController = TextEditingController(text: widget.initialDetails.sesi);
     _metodeController = TextEditingController(text: widget.initialDetails.metode);
     _tanggalJadwalController = TextEditingController(text: widget.initialDetails.tanggalJadwal);
@@ -116,7 +110,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
   void _setEditingMode(bool editing) {
     setState(() {
       _isEditing = editing;
-      // Mengatur ulang selection untuk memaksa UI memperbarui mode readOnly
+      // Mengatur ulang selection untuk memaksa UI memperbarui mode readOnly pada TextField yang dapat diedit
       _programStudiController.selection = TextSelection.collapsed(offset: _programStudiController.text.length);
       _mataKuliahController.selection = TextSelection.collapsed(offset: _mataKuliahController.text.length);
       _kurikulumController.selection = TextSelection.collapsed(offset: _kurikulumController.text.length);
@@ -140,7 +134,9 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
     if (!_isEditing) return; // Hanya bisa diakses saat mode edit
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _tanggalJadwalController.text.isNotEmpty
+          ? DateFormat('dd MMMM yyyy', 'id_ID').parse(_tanggalJadwalController.text)
+          : DateTime.now(), // Menggunakan tanggal yang ada atau tanggal saat ini
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
       builder: (context, child) {
@@ -163,7 +159,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
     );
     if (picked != null) {
       setState(() {
-        _tanggalJadwalController.text = DateFormat('dd MMMM sebagaimana adanya').format(picked);
+        _tanggalJadwalController.text = DateFormat('dd MMMM yyyy', 'id_ID').format(picked); // Format yang benar
       });
     }
   }
@@ -173,7 +169,9 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
     if (!_isEditing) return; // Hanya bisa diakses saat mode edit
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: _waktuSelesaiController.text.isNotEmpty
+          ? TimeOfDay.fromDateTime(DateFormat('HH:mm').parse(_waktuSelesaiController.text))
+          : TimeOfDay.now(), // Menggunakan waktu yang ada atau waktu saat ini
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
@@ -199,10 +197,9 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
     }
   }
 
-  // Fungsi untuk reset semua field ke nilai awal
+  // Fungsi untuk reset semua field ke nilai awal (initialDetails)
   void _resetFields() {
     setState(() {
-      // Kembali ke nilai awal yang diterima saat halaman dimuat
       _sesiController.text = widget.initialDetails.sesi;
       _metodeController.text = widget.initialDetails.metode;
       _tanggalJadwalController.text = widget.initialDetails.tanggalJadwal;
@@ -222,7 +219,15 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
 
   @override
   void dispose() {
-    // Hanya dispose controllers yang dibuat di sini
+    // Dispose controllers yang dibuat di sini
+    _programStudiController.dispose();
+    _mataKuliahController.dispose();
+    _kurikulumController.dispose();
+    _kapasitasController.dispose();
+    _periodeController.dispose();
+    _namaKelasController.dispose();
+    _sistemKuliahController.dispose();
+
     _sesiController.dispose();
     _metodeController.dispose();
     _tanggalJadwalController.dispose();
@@ -246,7 +251,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFFC8A2C8), // Warna AppBar yang serasi
+        backgroundColor: const Color(0xFF90CAF9), // Warna AppBar yang serasi
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white), // Warna ikon back
@@ -316,7 +321,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                 Navigator.pop(context); // Tutup drawer
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const PesertaKelasPage()),
+                  MaterialPageRoute(builder: (context) => const PesertaKelasPage()), // Navigasi ke PesertaKelasPage
                 );
               },
             ),
