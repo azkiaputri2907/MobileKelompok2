@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_kelompok2/pages/auth/login_page.dart';
-import 'package:mobile_kelompok2/onboarding/onboarding_page.dart';
+import 'package:mobile_kelompok2/screens/auth/login_page.dart';
+import 'package:mobile_kelompok2/screens/auth/onboarding_page.dart';
 import 'package:mobile_kelompok2/screens/dosen/dashboard.dart';
+import 'screens/auth/login_page.dart';
+import 'screens/auth/onboarding_page.dart';
 
 void main() {
   runApp(const MyApp());

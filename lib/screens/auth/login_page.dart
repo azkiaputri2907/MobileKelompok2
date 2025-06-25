@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_kelompok2/onboarding/onboarding_page.dart';
+import 'package:mobile_kelompok2/screens/auth/onboarding_page.dart';
 
 
 class LoginPage extends StatefulWidget {

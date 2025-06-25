@@ -8,7 +8,7 @@ import 'package:mobile_kelompok2/screens/dosen/jadwal_dosen.dart'; // Path diper
 import 'package:mobile_kelompok2/screens/dosen/tanggungan.dart'; // Mengganti tanggungan.dart menjadi tanggungan_page.dart
 // Import DetailKelasPage
 import 'package:mobile_kelompok2/screens/dosen/detail_kelas.dart';
-import 'package:mobile_kelompok2/pages/auth/login_page.dart';
+import 'package:mobile_kelompok2/screens/auth/login_page.dart';
 
 
 // ====== Placeholder Pages for Navigation ======

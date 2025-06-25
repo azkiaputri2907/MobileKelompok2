@@ -1,4 +1,4 @@
-import '../model/onboarding_model.dart';
+import '../../model/onboarding_model.dart';
 
 final List<OnboardingModel> onboardingDataList = [
   OnboardingModel(
