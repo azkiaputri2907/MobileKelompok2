@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_kelompok2/screens/dosen/detail_kelas.dart'; // Import halaman Detail Kelas
 // Pastikan Anda mengimpor DashboardDosen jika berada di file terpisah
-import 'package:mobile_kelompok2/screens/dosen/dashboard.dart'; // <--- Tambahkan ini
+import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart'; // <--- Tambahkan ini
 
 // Model data untuk menyimpan detail kelas yang bisa diedit
 class ClassDetails {

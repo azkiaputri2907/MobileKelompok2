@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_kelompok2/screens/auth/login_page.dart';
 import 'package:mobile_kelompok2/screens/auth/onboarding_page.dart';
-import 'package:mobile_kelompok2/screens/dosen/dashboard.dart';
+import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/auth/onboarding_page.dart';
 

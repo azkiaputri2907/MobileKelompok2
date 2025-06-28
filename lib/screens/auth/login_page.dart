@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_kelompok2/screens/auth/onboarding_page.dart';
 
+// Import semua dashboard yang dibutuhkan
+import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart'; // Asumsi path untuk DashboardDosen
+import 'package:mobile_kelompok2/screens/pegawai/dashboardpegawai.dart'; // Asumsi path untuk DashboardPegawai
+import 'package:mobile_kelompok2/screens/admin/admindashboard.dart'; // Import AdminDashboard yang baru Anda buat
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,12 +24,68 @@ class _LoginPageState extends State<LoginPage> {
       final email = _emailController.text;
       final password = _passwordController.text;
 
-      // TODO: Hubungkan dengan backend Laravel atau lakukan proses otentikasi
-      print('Email: $email\nPassword: $password');
-      // Navigasi ke halaman dashboard setelah login berhasil
-      // Pastikan '/dashboard' terdaftar di routes main.dart Anda
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      // Logika sederhana untuk routing berdasarkan email
+      // Di aplikasi nyata, Anda akan memanggil API backend untuk otentikasi
+      // dan menerima peran pengguna dari sana.
+
+      if (email.contains('dosen')) { // Contoh: email mengandung 'dosen'
+        if (password == 'passworddosen') { // Password simulasi untuk dosen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardDosen()),
+          );
+        } else {
+          _showErrorDialog('Login Gagal', 'Password salah untuk akun dosen.');
+        }
+      // } else if (email.contains('pegawai')) { // Contoh: email mengandung 'pegawai'
+      //   if (password == 'passwordpegawai') { // Password simulasi untuk pegawai
+      //     Navigator.pushReplacement(
+      //       context,
+      //       MaterialPageRoute(builder: (context) => const DashboardPegawai()),
+      //     );
+      //   } else {
+      //     _showErrorDialog('Login Gagal', 'Password salah untuk akun pegawai.');
+      //   }
+      } else if (email.contains('admin')) { // Tambahan: Untuk akun Admin
+        if (password == 'passwordadmin') { // Password simulasi untuk admin
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminDashboard()),
+          );
+        } else {
+          _showErrorDialog('Login Gagal', 'Password salah untuk akun admin.');
+        }
+      } else {
+        _showErrorDialog(
+          'Login Gagal',
+          'Email atau password tidak valid. Coba:\n'
+          '- dosen@example.com / passworddosen\n'
+          '- pegawai@example.com / passwordpegawai\n'
+          '- admin@example.com / passwordadmin',
+        );
+      }
     }
+  }
+
+  // Fungsi untuk menampilkan dialog error
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -58,11 +118,12 @@ class _LoginPageState extends State<LoginPage> {
                         icon: const Icon(Icons.arrow_back, color: Colors.white),
                         onPressed: () {
                           // Handle back/close action
-                        Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (context) => const OnboardingPage()),
-                        (route) => false, // Menghapus semua route sebelumnya
-                                      );                        },
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (context) => const OnboardingPage()),
+                            (route) => false, // Menghapus semua route sebelumnya
+                          );
+                        },
                       ),
                     ),
                     // Ilustrasi orang dengan bulan
@@ -112,7 +173,7 @@ class _LoginPageState extends State<LoginPage> {
                             controller: _emailController,
                             decoration: InputDecoration(
                               labelText: 'Email Address',
-                              hintText: 'kia@gmail.com', // Contoh hint text
+                              hintText: 'dosen@, pegawai@, atau admin@', // Contoh hint text baru
                               filled: true,
                               fillColor: Colors.white,
                               prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF6A5AE0)),

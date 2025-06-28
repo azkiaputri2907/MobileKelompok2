@@ -4,7 +4,7 @@ import 'package:mobile_kelompok2/screens/dosen/detail_kelas.dart'; // Import Cla
 import 'package:mobile_kelompok2/screens/dosen/jadwal_dosen.dart';
 import 'package:mobile_kelompok2/screens/dosen/peserta.dart'; // Import halaman Peserta Kelas (sesuai permintaan)
 import 'package:mobile_kelompok2/screens/dosen/presensi.dart'; // Import halaman Peserta Kelas (sesuai permintaan)
-import 'package:mobile_kelompok2/screens/dosen/dashboard.dart'; // Import ClassDetails (penting untuk data persisten)
+import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart'; // Import ClassDetails (penting untuk data persisten)
 
 
 // Placeholder pages for Drawer navigation.

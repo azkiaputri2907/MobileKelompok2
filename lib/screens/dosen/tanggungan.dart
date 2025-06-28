@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_kelompok2/screens/dosen/dashboard.dart'; // <--- Tambahkan ini
+import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart'; // <--- Tambahkan ini
 
 // Asumsi kelas DashboardDosen ada di file lain atau perlu didefinisikan.
 // Untuk tujuan demonstrasi, saya akan menambahkan placeholder di sini.
