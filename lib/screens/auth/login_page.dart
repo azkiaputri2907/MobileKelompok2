@@ -1,275 +1,199 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_kelompok2/screens/auth/onboarding_page.dart';
+import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart';
+import 'package:mobile_kelompok2/screens/admin/admindashboard.dart'; // Import for AdminDashboard
+import 'package:mobile_kelompok2/screens/lupa_password_screen.dart';
+import 'package:mobile_kelompok2/services/auth_service.dart';
 
-// Import semua dashboard yang dibutuhkan
-import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart'; // Asumsi path untuk DashboardDosen
-import 'package:mobile_kelompok2/screens/pegawai/dashboardpegawai.dart'; // Asumsi path untuk DashboardPegawai
-import 'package:mobile_kelompok2/screens/admin/admindashboard.dart'; // Import AdminDashboard yang baru Anda buat
-
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _isObscure = true;
+  final AuthService _authService = AuthService();
 
-  void _login() {
-    if (_formKey.currentState!.validate()) {
-      final email = _emailController.text;
-      final password = _passwordController.text;
+  bool _isLoading = false;
+  bool _obscurePassword = true;
 
-      // Logika sederhana untuk routing berdasarkan email
-      // Di aplikasi nyata, Anda akan memanggil API backend untuk otentikasi
-      // dan menerima peran pengguna dari sana.
+  Future<void> _handleLogin() async {
+    setState(() => _isLoading = true);
 
-      if (email.contains('dosen')) { // Contoh: email mengandung 'dosen'
-        if (password == 'passworddosen') { // Password simulasi untuk dosen
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const DashboardDosen()),
-          );
-        } else {
-          _showErrorDialog('Login Gagal', 'Password salah untuk akun dosen.');
-        }
-      // } else if (email.contains('pegawai')) { // Contoh: email mengandung 'pegawai'
-      //   if (password == 'passwordpegawai') { // Password simulasi untuk pegawai
-      //     Navigator.pushReplacement(
-      //       context,
-      //       MaterialPageRoute(builder: (context) => const DashboardPegawai()),
-      //     );
-      //   } else {
-      //     _showErrorDialog('Login Gagal', 'Password salah untuk akun pegawai.');
-      //   }
-      } else if (email.contains('admin')) { // Tambahan: Untuk akun Admin
-        if (password == 'passwordadmin') { // Password simulasi untuk admin
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const AdminDashboard()),
-          );
-        } else {
-          _showErrorDialog('Login Gagal', 'Password salah untuk akun admin.');
-        }
-      } else {
-        _showErrorDialog(
-          'Login Gagal',
-          'Email atau password tidak valid. Coba:\n'
-          '- dosen@example.com / passworddosen\n'
-          '- pegawai@example.com / passwordpegawai\n'
-          '- admin@example.com / passwordadmin',
+    // Call the updated login method which returns the user's role
+    final String? userRole = await _authService.login(
+      _emailController.text,
+      _passwordController.text,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (userRole != null && mounted) {
+      // Login successful, navigate based on the user's role
+      if (userRole == 'Dosen') { // Match the exact role string from your API
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardDosen()),
         );
+      } else if (userRole == 'Admin Pegawai') { // Match the exact role string from your API
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminDashboard()),
+        );
+      } else {
+        // Handle unexpected role or default to a common dashboard if needed
+        _showLoginFailedDialog('Peran pengguna tidak dikenal. Silakan hubungi administrator.');
       }
+    } else {
+      // Login failed (userRole is null)
+      _showLoginFailedDialog('Email atau Password salah.');
     }
   }
 
-  // Fungsi untuk menampilkan dialog error
-  void _showErrorDialog(String title, String message) {
+  // Helper method to show login failed dialog
+  void _showLoginFailedDialog(String message) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
+      builder: (_) => AlertDialog(
+        title: const Text('Login Gagal'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2F5), // Background warna cerah sesuai gambar
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Bagian atas dengan warna biru soft dan ilustrasi
-              Container(
-                width: double.infinity,
-                height: 200, // Mengurangi tinggi container header
-                decoration: const BoxDecoration(
-                  color: Color(0xFF9FBADE), // Warna biru soft
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(50),
-                    bottomRight: Radius.circular(50),
-                  ),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const OnboardingPage()),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              const Center(
+                child: Column(
                   children: [
-                    // Tombol kembali di pojok kiri atas
-                    Positioned(
-                      top: 16,
-                      left: 16,
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () {
-                          // Handle back/close action
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (context) => const OnboardingPage()),
-                            (route) => false, // Menghapus semua route sebelumnya
-                          );
-                        },
-                      ),
+                    Text(
+                      'Login',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
-                    // Ilustrasi orang dengan bulan
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.network(
-                          'https://placehold.co/120x120/ffffff/000000?text=Your+Illustration', // Mengurangi ukuran placeholder
-                          height: 120, // Mengurangi tinggi ilustrasi
-                          width: 120, // Mengurangi lebar ilustrasi
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/images/dosen_ilustrasi.png', // Fallback to local asset
-                              height: 150, // Sesuaikan fallback juga
-                              width: 150, // Sesuaikan fallback juga
-                              fit: BoxFit.contain,
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                      ],
+                    SizedBox(height: 4),
+                    Text(
+                      'Yuk, login dulu sebelum lanjut',
+                      style: TextStyle(fontSize: 14, color: Colors.black54),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Log in',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF37474F),
-                      ),
+
+              const Text('Email', style: TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  hintText: 'Masukkan Email',
+                  filled: true,
+                  fillColor: const Color(0xFFF1F3F6),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              const Text('Password', style: TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  hintText: 'Masukkan Password',
+                  filled: true,
+                  fillColor: const Color(0xFFF1F3F6),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey,
                     ),
-                    const SizedBox(height: 24),
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            controller: _emailController,
-                            decoration: InputDecoration(
-                              labelText: 'Email Address',
-                              hintText: 'dosen@, pegawai@, atau admin@', // Contoh hint text baru
-                              filled: true,
-                              fillColor: Colors.white,
-                              prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF6A5AE0)),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color.fromARGB(255, 73, 141, 249), width: 2),
-                              ),
-                              isDense: true, // Membuat TextField lebih padat
-                              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10), // Mengurangi padding internal
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) =>
-                                value == null || value.isEmpty ? 'Email wajib diisi' : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _passwordController,
-                            obscureText: _isObscure,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              filled: true,
-                              fillColor: Colors.white,
-                              prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF6A5AE0)),
-                              suffixIcon: IconButton(
-                                icon: Icon(_isObscure
-                                    ? Icons.visibility_off
-                                    : Icons.visibility, color: Colors.grey),
-                                onPressed: () {
-                                  setState(() {
-                                    _isObscure = !_isObscure;
-                                  });
-                                },
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF4682B4), width: 2),
-                              ),
-                              isDense: true, // Membuat TextField lebih padat
-                              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10), // Mengurangi padding internal
-                            ),
-                            validator: (value) =>
-                                value == null || value.isEmpty ? 'Password wajib diisi' : null,
-                          ),
-                          const SizedBox(height: 10),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                // Tambahkan navigasi ke halaman lupa password
-                                print('Lupa Password?');
-                              },
-                              child: const Text(
-                                'Lupa Password?',
-                                style: TextStyle(color: Color(0xFF6A5AE0), fontSize: 13),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: _login,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4682B4), // Warna kuning sesuai gambar
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 3,
-                              ),
-                              child: const Text(
-                                'Log In',
-                                style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Harus berupa kombinasi minimal 8 huruf, angka, dan simbol.',
+                style: TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LupaPasswordScreen()),
+                    );
+                  },
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  child: const Text(
+                    'Lupa Password',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
                     ),
-                  ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0052CC),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: _isLoading ? null : _handleLogin,
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Masuk',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
                 ),
               ),
             ],

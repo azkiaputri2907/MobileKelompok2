@@ -11,6 +11,7 @@ import 'package:mobile_kelompok2/screens/dosen/detail_kelas.dart';
 import 'package:mobile_kelompok2/screens/auth/login_page.dart';
 
 
+
 // ====== Placeholder Pages for Navigation ======
 // Definisi halaman-halaman ini dipindahkan ke sini agar dashboard.dart tetap self-contained
 // Namun, jika halaman-halaman ini adalah file terpisah, Anda harus mengimpornya.
@@ -282,7 +283,7 @@ class _DashboardDosenState extends State<DashboardDosen> {
             onTap: () {
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
                 (route) => false, // Menghapus semua route sebelumnya
               );
             },

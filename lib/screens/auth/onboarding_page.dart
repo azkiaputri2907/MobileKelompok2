@@ -14,18 +14,18 @@ class OnboardingData {
 final List<OnboardingData> onboardingDataList = [
   OnboardingData(
     imagePath: 'assets/images/onboarding1.jpg', // Ganti dengan aset gambar Anda
-    title: 'Selamat Datang!',
-    description: 'Temukan berbagai fitur menarik yang akan membantu Anda.',
+    title: '🎓 Belajar Jadi Lebih Simpel & Seru',
+    description: 'Kini kamu bisa belajar hal baru tanpa ribet! Cukup dari ponselmu, semua materi tersedia dan bisa diakses kapan pun kamu punya waktu.',
   ),
   OnboardingData(
     imagePath: 'assets/images/onboarding2.jpg', // Ganti dengan aset gambar Anda
-    title: 'Mudah Digunakan',
-    description: 'Antarmuka yang intuitif membuat pengalaman Anda lebih menyenangkan.',
+    title: '🤝 Belajarnya Bareng-Bareng !',
+    description: 'Ada komunitas dan mentor yang siap bantu kamu setiap langkah. Jadi belajar nggak cuma sendiri, tapi rame dan seru bareng yang lain.',
   ),
   OnboardingData(
     imagePath: 'assets/images/onboarding3.jpg', // Ganti dengan aset gambar Anda
-    title: 'Siap Memulai?',
-    description: 'Mari kita mulai perjalanan Anda bersama kami sekarang!',
+    title: '📚 Belajar Tanpa Batas, Kapan Aja',
+    description: 'Nggak perlu nunggu waktu luang lama cukup beberapa menit sehari, kamu udah bisa dapet ilmu baru yang bermanfaat langsung dari HP kamu.',
   ),
 ];
 

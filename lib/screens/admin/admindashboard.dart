@@ -20,7 +20,7 @@ class AdminDashboard extends StatelessWidget {
     final DateTime now = DateTime.now();
     // Format tanggal ke "Hari, Tanggal Bulan Tahun"
     // Contoh: "Jumat, 28 Juni 2025"
-    final String formattedDate = DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(now);
+    //final String formattedDate = DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(now);
     // Catatan: Untuk 'id_ID' agar nama hari dan bulan dalam Bahasa Indonesia,
     // pastikan Anda sudah menginisialisasi locale di MaterialApp atau menggunakan flutter_localizations.
     // Jika tidak, akan tampil dalam Bahasa Inggris secara default.
@@ -42,7 +42,7 @@ class AdminDashboard extends StatelessWidget {
             icon: const Icon(Icons.logout, color: Color(0xFF333333)),
             onPressed: () {
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const LoginPage()),
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
                 (Route<dynamic> route) => false,
               );
             },
@@ -69,14 +69,14 @@ class AdminDashboard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      formattedDate, // Menggunakan tanggal yang diformat
-                      style: const TextStyle(
-                        fontSize: 20, // Ukuran font disesuaikan agar tidak terlalu besar
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333),
-                      ),
-                    ),
+                    // Text(
+                    //   formattedDate, // Menggunakan tanggal yang diformat
+                    //   style: const TextStyle(
+                    //     fontSize: 20, // Ukuran font disesuaikan agar tidak terlalu besar
+                    //     fontWeight: FontWeight.bold,
+                    //     color: Color(0xFF333333),
+                    //   ),
+                    // ),
                     IconButton(
                       icon: const Icon(Icons.search, size: 26, color: Color(0xFF333333)),
                       onPressed: () {
@@ -104,7 +104,7 @@ class AdminDashboard extends StatelessWidget {
                         'https://placehold.co/40x40/BA55D3/FFFFFF?text=C',
                       ],
                       progress: 1.0,
-                      cardColor: const Color(0xFFF06292),
+                      cardColor: const Color(0xFF90CAF9),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -122,7 +122,7 @@ class AdminDashboard extends StatelessWidget {
                         'https://placehold.co/40x40/8A2BE2/FFFFFF?text=D',
                       ],
                       progress: 0.25,
-                      cardColor: const Color(0xFF673AB7),
+                      cardColor: const Color(0xFF191970),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -141,7 +141,7 @@ class AdminDashboard extends StatelessWidget {
                         'https://placehold.co/40x40/FFA500/FFFFFF?text=F',
                       ],
                       progress: 4 / 7,
-                      cardColor: const Color(0xFFFFC107),
+                      cardColor: const Color(0xFF5F9EA0),
                       onTap: () {
                         Navigator.push(
                           context,
