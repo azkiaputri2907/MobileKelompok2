@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io'; // Pastikan ini diimpor jika digunakan untuk HttpExceptions, dll.
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -9,8 +9,8 @@ class AuthService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   /// Login API - Kirim email dan password ke backend
-  /// Jika berhasil, simpan token dan user ke storage, lalu return role user
-  Future<String?> login(String email, String password) async {
+  /// Jika berhasil, simpan token dan user ke storage, lalu return Map berisi role, userName, dan ref_Id
+  Future<Map<String, dynamic>?> login(String email, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/login'),
@@ -31,17 +31,27 @@ class AuthService {
         await _storage.write(key: 'user', value: json.encode(data['user']));
 
         final role = data['user']?['role'];
+        final userName = data['user']?['name']; // Ambil nama pengguna
+        final refId = data['user']?['id']; // Ambil ID referensi (dosenId/adminId)
+
         if (role != null && (role == 'Dosen' || role == 'Admin Pegawai')) {
-          return role.toString(); // dikembalikan ke UI untuk diarahkan ke dashboard
+          return {
+            'role': role.toString(),
+            'userName': userName?.toString(),
+            'ref_Id': refId,
+          };
         } else {
           print('Login berhasil tapi role tidak dikenali: $role');
-          return 'unknown'; // role tidak valid → UI bisa handle ini
+          return null; // role tidak valid atau tidak dikenali
         }
       } else {
         print('Login gagal dengan status: ${response.statusCode}');
         print('Body: ${response.body}');
         return null;
       }
+    } on SocketException {
+      print('Tidak ada koneksi internet.');
+      return null;
     } catch (e) {
       print('Terjadi error saat login: $e');
       return null;
@@ -76,6 +86,9 @@ class AuthService {
         print('Body: ${response.body}');
         return null;
       }
+    } on SocketException {
+      print('Tidak ada koneksi internet.');
+      return null;
     } catch (e) {
       print('Error saat ambil user data: $e');
       return null;
@@ -94,6 +107,8 @@ class AuthService {
             'Authorization': 'Bearer $token',
           },
         );
+      } on SocketException {
+        print('Tidak ada koneksi internet saat logout.');
       } catch (e) {
         print('Error saat logout: $e');
       }

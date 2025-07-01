@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_kelompok2/screens/auth/login_page.dart';
 import 'package:mobile_kelompok2/screens/auth/onboarding_page.dart';
-import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart';
+import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart'; // Tetap import untuk referensi tipe
 import 'package:mobile_kelompok2/screens/admin/admindashboard.dart'; // Import AdminDashboard
 
 void main() {
@@ -15,9 +15,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      // Ensure you have flutter_localizations configured in your pubspec.yaml
-      // and initialized here if you want 'id_ID' locale to work for DateFormat.
-      // E.g.:
+      // Pastikan Anda sudah mengonfigurasi `flutter_localizations` di `pubspec.yaml`
+      // dan menginisialisasinya di sini jika Anda ingin locale 'id_ID' bekerja untuk DateFormat.
+      // Contoh:
       // localizationsDelegates: const [
       //   GlobalMaterialLocalizations.delegate,
       //   GlobalWidgetsLocalizations.delegate,
@@ -27,11 +27,12 @@ class MyApp extends StatelessWidget {
       //   Locale('en', ''), // English, no country code
       //   Locale('id', 'ID'), // Indonesian, Indonesia
       // ],
-      home: const OnboardingPage(), // Or change to LoginPage if you want to skip onboarding
+      home: const OnboardingPage(), // Atau ubah ke LoginPage jika Anda ingin melewati onboarding
       routes: {
         '/login': (context) => const LoginScreen(),
-        '/dashboard_dosen': (context) => const DashboardDosen(), // Specific route for Dosen
-        '/dashboard_admin': (context) => const AdminDashboard(),   // **NEW: Route for Admin Dashboard**
+        // Rute '/dashboard_dosen' telah dihapus karena navigasi ke DashboardDosen
+        // kini menangani passing data (userName) secara langsung melalui MaterialPageRoute dari LoginPage.
+        '/dashboard_admin': (context) => const AdminDashboard(), // Rute untuk Admin Dashboard
       },
     );
   }

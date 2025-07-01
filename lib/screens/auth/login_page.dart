@@ -20,41 +20,65 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
 
-    // Call the updated login method which returns the user's role
-    final String? userRole = await _authService.login(
+    // Panggil metode login yang diperbarui yang mengembalikan peran, nama, dan ID pengguna
+    // Asumsi AuthService.login sekarang mengembalikan Map seperti
+    // {'role': 'Dosen', 'userName': 'Nama Dosen', 'ref_Id': 123}
+    final Map<String, dynamic>? loginResult = await _authService.login(
       _emailController.text,
       _passwordController.text,
     );
 
     setState(() => _isLoading = false);
 
-    if (userRole != null && mounted) {
-      // Login successful, navigate based on the user's role
-      if (userRole == 'Dosen') { // Match the exact role string from your API
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardDosen()),
-        );
-      } else if (userRole == 'Admin Pegawai') { // Match the exact role string from your API
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const AdminDashboard()),
-        );
+    if (loginResult != null && mounted) {
+      final String? userRole = loginResult['role'];
+      final String? userName = loginResult['userName']; // Dapatkan nama pengguna
+      final int? refId = loginResult['ref_Id']; // Dapatkan ID referensi (dosenId/adminId)
+
+      if (userRole != null && userName != null) {
+        // Login berhasil, navigasi berdasarkan peran pengguna
+        if (userRole == 'Dosen') {
+          if (refId != null) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DashboardDosen(userName: userName, dosenId: refId),
+              ),
+            );
+          } else {
+            _showLoginFailedDialog('ID Dosen tidak ditemukan. Silakan hubungi administrator.');
+          }
+        } else if (userRole == 'Admin Pegawai') {
+          // Untuk Admin Pegawai, mungkin tidak perlu refId, atau bisa diteruskan jika ada
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminDashboard()),
+          );
+        } else {
+          _showLoginFailedDialog('Peran pengguna tidak dikenal. Silakan hubungi administrator.');
+        }
       } else {
-        // Handle unexpected role or default to a common dashboard if needed
-        _showLoginFailedDialog('Peran pengguna tidak dikenal. Silakan hubungi administrator.');
+        _showLoginFailedDialog('Gagal mendapatkan informasi peran atau nama pengguna.');
       }
     } else {
-      // Login failed (userRole is null)
+      // Login gagal (loginResult adalah null)
       _showLoginFailedDialog('Email atau Password salah.');
     }
   }
 
-  // Helper method to show login failed dialog
+  // Metode pembantu untuk menampilkan dialog login gagal
   void _showLoginFailedDialog(String message) {
+    if (!mounted) return; // Pastikan widget masih mounted sebelum menampilkan dialog
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -106,7 +130,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-
               const Text('Email', style: TextStyle(fontWeight: FontWeight.w500)),
               const SizedBox(height: 6),
               TextFormField(
@@ -122,7 +145,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
               const Text('Password', style: TextStyle(fontWeight: FontWeight.w500)),
               const SizedBox(height: 6),
               TextFormField(
@@ -176,7 +198,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

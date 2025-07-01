@@ -1,30 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Import pustaka intl
+import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:mobile_kelompok2/screens/auth/buka_kelas.dart';
 
-// Import halaman-halaman ListPage yang dibutuhkan admin
 import 'package:mobile_kelompok2/screens/admin/presensi_kelas_list.dart';
 import 'package:mobile_kelompok2/screens/admin/pegawai_list_page.dart';
 import 'package:mobile_kelompok2/screens/admin/status_list_page.dart';
 import 'package:mobile_kelompok2/screens/admin/provinsi_list_page.dart';
 import 'package:mobile_kelompok2/screens/admin/kotakabupaten_list_page.dart';
-
-// Import halaman login untuk navigasi kembali
 import 'package:mobile_kelompok2/screens/auth/login_page.dart';
+import 'package:mobile_kelompok2/screens/auth/buka_kelas.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
 
+  Future<void> tambahJadwalUntukDosen(BuildContext context) async {
+    const url = 'https://ti054e01.agussbn.my.id/api/jadwal';
+    const token = 'pQuALuRdwhD9RTAi7cUYmEREDOq594ckJMSQcjWdHKfxQthH2e99lfZGzUvtiJJC';
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        "judul": "Kelas Pagi Algoritma",
+        "tanggal": DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        "jam_mulai": "08:00",
+        "jam_selesai": "10:00",
+        "id_dosen": 2 // <- sesuaikan ID dosen yang valid
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Jadwal berhasil ditambahkan!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menambah jadwal: ${response.body}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Dapatkan tanggal dan waktu saat ini
-    final DateTime now = DateTime.now();
-    // Format tanggal ke "Hari, Tanggal Bulan Tahun"
-    // Contoh: "Jumat, 28 Juni 2025"
-    //final String formattedDate = DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(now);
-    // Catatan: Untuk 'id_ID' agar nama hari dan bulan dalam Bahasa Indonesia,
-    // pastikan Anda sudah menginisialisasi locale di MaterialApp atau menggunakan flutter_localizations.
-    // Jika tidak, akan tampil dalam Bahasa Inggris secara default.
-
     final Size screenSize = MediaQuery.of(context).size;
     final double horizontalPadding = screenSize.width * 0.05;
     final double verticalPadding = screenSize.height * 0.02;
@@ -54,41 +76,37 @@ class AdminDashboard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFCECFB),
-              Color(0xFFE0E7FF),
-            ],
+            colors: [Color(0xFFFCECFB), Color(0xFFE0E7FF)],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // Custom Header Area dengan tanggal
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Text(
-                    //   formattedDate, // Menggunakan tanggal yang diformat
-                    //   style: const TextStyle(
-                    //     fontSize: 20, // Ukuran font disesuaikan agar tidak terlalu besar
-                    //     fontWeight: FontWeight.bold,
-                    //     color: Color(0xFF333333),
-                    //   ),
-                    // ),
-                    IconButton(
-                      icon: const Icon(Icons.search, size: 26, color: Color(0xFF333333)),
+                    ElevatedButton.icon(
                       onPressed: () {
-                        // Aksi untuk ikon pencarian
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const BukaKelasPage()),
+                        );
                       },
+                      icon: const Icon(Icons.add),
+                      label: const Text("Tambah Jadwal Dosen"),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color.fromARGB(255, 255, 255, 255)),
+                    ),
+
+                    IconButton(
+                      icon: const Icon(Icons.search, size: 26, color: Color.fromARGB(255, 255, 255, 255)),
+                      onPressed: () {},
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Daftar "Project" Cards
               Expanded(
                 child: ListView(
                   padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
@@ -101,15 +119,11 @@ class AdminDashboard extends StatelessWidget {
                       avatars: const [
                         'https://placehold.co/40x40/FF69B4/FFFFFF?text=A',
                         'https://placehold.co/40x40/DA70D6/FFFFFF?text=B',
-                        'https://placehold.co/40x40/BA55D3/FFFFFF?text=C',
                       ],
                       progress: 1.0,
                       cardColor: const Color(0xFF90CAF9),
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const PegawaiListPage()),
-                        );
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const PegawaiListPage()));
                       },
                     ),
                     const SizedBox(height: 20),
@@ -118,16 +132,11 @@ class AdminDashboard extends StatelessWidget {
                       title: 'Kota/Kabupaten',
                       tasksCompleted: 2,
                       totalTasks: 8,
-                      avatars: const [
-                        'https://placehold.co/40x40/8A2BE2/FFFFFF?text=D',
-                      ],
+                      avatars: const ['https://placehold.co/40x40/8A2BE2/FFFFFF?text=D'],
                       progress: 0.25,
                       cardColor: const Color(0xFF191970),
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const KotaKabupatenListPage()),
-                        );
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const KotaKabupatenListPage()));
                       },
                     ),
                     const SizedBox(height: 20),
@@ -143,10 +152,7 @@ class AdminDashboard extends StatelessWidget {
                       progress: 4 / 7,
                       cardColor: const Color(0xFF5F9EA0),
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ProvinsiListPage()),
-                        );
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ProvinsiListPage()));
                       },
                     ),
                     const SizedBox(height: 20),
@@ -155,16 +161,11 @@ class AdminDashboard extends StatelessWidget {
                       title: 'Status',
                       tasksCompleted: 1,
                       totalTasks: 1,
-                      avatars: const [
-                        'https://placehold.co/40x40/4CAF50/FFFFFF?text=G',
-                      ],
+                      avatars: const ['https://placehold.co/40x40/4CAF50/FFFFFF?text=G'],
                       progress: 1.0,
                       cardColor: Colors.teal,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const StatusListPage()),
-                        );
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const StatusListPage()));
                       },
                     ),
                     const SizedBox(height: 20),
@@ -173,16 +174,11 @@ class AdminDashboard extends StatelessWidget {
                       title: 'Presensi',
                       tasksCompleted: 1,
                       totalTasks: 1,
-                      avatars: const [
-                        'https://placehold.co/40x40/2196F3/FFFFFF?text=H',
-                      ],
+                      avatars: const ['https://placehold.co/40x40/2196F3/FFFFFF?text=H'],
                       progress: 1.0,
                       cardColor: Colors.blue,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const PresensiKelasListPage()),
-                        );
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const PresensiKelasListPage()));
                       },
                     ),
                     const SizedBox(height: 80),
@@ -220,52 +216,48 @@ class AdminDashboard extends StatelessWidget {
           padding: EdgeInsets.all(cardPadding),
           width: double.infinity,
           height: 180,
-          child: Stack(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: avatars.map((avatarUrl) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 4.0),
-                        child: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: Colors.white,
-                          child: ClipOval(
-                            child: Image.network(
-                              avatarUrl,
-                              width: 32,
-                              height: 32,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(Icons.person, color: Colors.grey, size: 24);
-                              },
-                            ),
-                          ),
+              Row(
+                children: avatars.map((avatarUrl) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 4.0),
+                    child: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: Colors.white,
+                      child: ClipOval(
+                        child: Image.network(
+                          avatarUrl,
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.person, color: Colors.grey, size: 24);
+                          },
                         ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '$tasksCompleted/$totalTasks tasks • ${(progress * 100).toInt()}%',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '$tasksCompleted/$totalTasks tasks • ${(progress * 100).toInt()}%',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -306,7 +298,7 @@ class AdminDashboard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            // TODO: Implement navigation for each bottom nav item
+            // Implementasi navigasi jika dibutuhkan
           },
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
