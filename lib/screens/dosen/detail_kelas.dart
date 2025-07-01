@@ -1,93 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:intl/intl.dart'; // Import untuk DateFormat
 import 'package:intl/date_symbol_data_local.dart'; // Import untuk inisialisasi lokal
+
+// Import halaman-halaman lain yang mungkin dibutuhkan oleh Drawer
 import 'package:mobile_kelompok2/screens/dosen/jadwal_dosen.dart';
-import 'package:mobile_kelompok2/screens/dosen/peserta.dart'; // Import halaman Peserta Kelas (sesuai permintaan)
-import 'package:mobile_kelompok2/screens/dosen/presensi.dart'; // Import halaman Presensi Kelas (sesuai permintaan)
-// import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart'; // Tidak perlu diimport jika ClassDetails ada di sini
-
-// Kelas model data untuk Detail Kelas
-// Pastikan ini ada di file yang sama atau di file terpisah yang diimpor
-class ClassDetails {
-  final String programStudi;
-  final String mataKuliah;
-  final String kurikulum;
-  final String kapasitas;
-  final String periode;
-  final String namaKelas;
-  final String sistemKuliah;
-  final String sesi;
-  final String metode;
-  final String tanggalJadwal;
-  final String ruangKuliah;
-  final String waktuSelesai;
-  final String keteranganRuangKuliah;
-  final String? jenisPertemuan; // Bisa null
-  final String urlKuliahOnline;
-  final String? status; // Bisa null
-
-  ClassDetails({
-    required this.programStudi,
-    required this.mataKuliah,
-    required this.kurikulum,
-    required this.kapasitas,
-    required this.periode,
-    required this.namaKelas,
-    required this.sistemKuliah,
-    required this.sesi,
-    required this.metode,
-    required this.tanggalJadwal,
-    required this.ruangKuliah,
-    required this.waktuSelesai,
-    required this.keteranganRuangKuliah,
-    this.jenisPertemuan,
-    required this.urlKuliahOnline,
-    this.status,
-  });
-
-  // Metode copyWith untuk memudahkan update objek
-  ClassDetails copyWith({
-    String? programStudi,
-    String? mataKuliah,
-    String? kurikulum,
-    String? kapasitas,
-    String? periode,
-    String? namaKelas,
-    String? sistemKuliah,
-    String? sesi,
-    String? metode,
-    String? tanggalJadwal,
-    String? ruangKuliah,
-    String? waktuSelesai,
-    String? keteranganRuangKuliah,
-    String? jenisPertemuan,
-    String? urlKuliahOnline,
-    String? status,
-  }) {
-    return ClassDetails(
-      programStudi: programStudi ?? this.programStudi,
-      mataKuliah: mataKuliah ?? this.mataKuliah,
-      kurikulum: kurikulum ?? this.kurikulum,
-      kapasitas: kapasitas ?? this.kapasitas,
-      periode: periode ?? this.periode,
-      namaKelas: namaKelas ?? this.namaKelas,
-      sistemKuliah: sistemKuliah ?? this.sistemKuliah,
-      sesi: sesi ?? this.sesi,
-      metode: metode ?? this.metode,
-      tanggalJadwal: tanggalJadwal ?? this.tanggalJadwal,
-      ruangKuliah: ruangKuliah ?? this.ruangKuliah,
-      waktuSelesai: waktuSelesai ?? this.waktuSelesai,
-      keteranganRuangKuliah: keteranganRuangKuliah ?? this.keteranganRuangKuliah,
-      jenisPertemuan: jenisPertemuan ?? this.jenisPertemuan,
-      urlKuliahOnline: urlKuliahOnline ?? this.urlKuliahOnline,
-      status: status ?? this.status,
-    );
-  }
-}
+import 'package:mobile_kelompok2/screens/dosen/peserta.dart';
+import 'package:mobile_kelompok2/screens/dosen/presensi.dart';
 
 // Placeholder pages for Drawer navigation.
-// Dalam aplikasi nyata, halaman-halaman ini sebaiknya berada di file terpisah
-// dan diimpor di sini.
 class JadwalPerkuliahanPage extends StatelessWidget {
   const JadwalPerkuliahanPage({super.key});
 
@@ -113,6 +35,119 @@ class NilaiPerkuliahanPage extends StatelessWidget {
 }
 // End of placeholder pages
 
+// Kelas model data untuk Detail Kelas
+class ClassDetails {
+  final int id; // Tambahkan ID pertemuan/jadwal
+  final String programStudi;
+  final String mataKuliah;
+  final String kurikulum; // Data ini mungkin perlu diambil dari relasi lain jika tidak langsung ada di 'pertemuan'
+  final String kapasitas; // Data ini mungkin perlu diambil dari relasi lain jika tidak langsung ada di 'pertemuan'
+  final String periode; // Data ini mungkin perlu diambil dari relasi lain jika tidak langsung ada di 'pertemuan'
+  final String namaKelas;
+  final String sistemKuliah; // Data ini mungkin perlu diambil dari relasi lain jika tidak langsung ada di 'pertemuan'
+
+  // Fields yang bisa diedit
+  final String sesi; // Asumsi ini adalah waktu mulai
+  final String metode;
+  final String tanggalJadwal;
+  final String ruangKuliah;
+  final String waktuSelesai;
+  final String keteranganRuangKuliah;
+  final String? jenisPertemuan;
+  final String urlKuliahOnline;
+  final String? status; // status_jadwal
+
+  ClassDetails({
+    required this.id,
+    required this.programStudi,
+    required this.mataKuliah,
+    required this.kurikulum,
+    required this.kapasitas,
+    required this.periode,
+    required this.namaKelas,
+    required this.sistemKuliah,
+    required this.sesi,
+    required this.metode,
+    required this.tanggalJadwal,
+    required this.ruangKuliah,
+    required this.waktuSelesai,
+    required this.keteranganRuangKuliah,
+    this.jenisPertemuan,
+    required this.urlKuliahOnline,
+    this.status,
+  });
+
+  // Factory constructor untuk membuat ClassDetails dari JSON
+  factory ClassDetails.fromJson(Map<String, dynamic> json) {
+    return ClassDetails(
+      id: json['id'] as int,
+      programStudi: json['kelas']?['prodi']?['nama'] ?? 'N/A', // Contoh akses nested JSON
+      mataKuliah: json['mata_kuliah']?['nama'] ?? 'N/A',
+      // Anda perlu menyesuaikan pengambilan data 'kurikulum', 'kapasitas', 'periode', 'sistemKuliah'
+      // Jika data ini tidak langsung ada di objek 'pertemuan' dari API,
+      // Anda mungkin perlu menambahkannya di backend atau mengambilnya dari API lain.
+      kurikulum: 'N/A', // Placeholder, sesuaikan jika ada di API
+      kapasitas: 'N/A', // Placeholder, sesuaikan jika ada di API
+      periode: json['tahun_akademik']?['nama'] ?? 'N/A', // Asumsi nama periode dari tahun akademik
+      namaKelas: json['kelas']?['nama_kelas'] ?? 'N/A',
+      sistemKuliah: 'N/A', // Placeholder, sesuaikan jika ada di API
+
+      sesi: json['waktu_mulai'] ?? 'N/A', // Sesi diasumsikan waktu_mulai
+      metode: json['metode'] ?? 'N/A',
+      tanggalJadwal: json['tanggal_jadwal'] != null
+          ? DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(json['tanggal_jadwal']))
+          : 'N/A',
+      ruangKuliah: json['ruang_kuliah'] ?? 'N/A',
+      waktuSelesai: json['waktu_selesai'] ?? 'N/A',
+      keteranganRuangKuliah: json['keterangan_ruang'] ?? 'N/A',
+      jenisPertemuan: json['jenis_pertemuan'],
+      urlKuliahOnline: json['url_kuliah_online'] ?? 'N/A',
+      status: json['status_jadwal'],
+    );
+  }
+
+  // Metode copyWith untuk memudahkan update objek
+  ClassDetails copyWith({
+    int? id,
+    String? programStudi,
+    String? mataKuliah,
+    String? kurikulum,
+    String? kapasitas,
+    String? periode,
+    String? namaKelas,
+    String? sistemKuliah,
+    String? sesi,
+    String? metode,
+    String? tanggalJadwal,
+    String? ruangKuliah,
+    String? waktuSelesai,
+    String? keteranganRuangKuliah,
+    String? jenisPertemuan,
+    String? urlKuliahOnline,
+    String? status,
+  }) {
+    return ClassDetails(
+      id: id ?? this.id,
+      programStudi: programStudi ?? this.programStudi,
+      mataKuliah: mataKuliah ?? this.mataKuliah,
+      kurikulum: kurikulum ?? this.kurikulum,
+      kapasitas: kapasitas ?? this.kapasitas,
+      periode: periode ?? this.periode,
+      namaKelas: namaKelas ?? this.namaKelas,
+      sistemKuliah: sistemKuliah ?? this.sistemKuliah,
+      sesi: sesi ?? this.sesi,
+      metode: metode ?? this.metode,
+      tanggalJadwal: tanggalJadwal ?? this.tanggalJadwal,
+      ruangKuliah: ruangKuliah ?? this.ruangKuliah,
+      waktuSelesai: waktuSelesai ?? this.waktuSelesai,
+      keteranganRuangKuliah: keteranganRuangKuliah ?? this.keteranganRuangKuliah,
+      jenisPertemuan: jenisPertemuan ?? this.jenisPertemuan,
+      urlKuliahOnline: urlKuliahOnline ?? this.urlKuliahOnline,
+      status: status ?? this.status,
+    );
+  }
+}
+
 class DetailKelasPage extends StatefulWidget {
   final ClassDetails initialDetails; // Menerima data awal dari halaman sebelumnya
 
@@ -133,7 +168,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
   late TextEditingController _sistemKuliahController;
 
   // Controllers untuk field yang bisa diedit
-  late TextEditingController _sesiController;
+  late TextEditingController _sesiController; // waktu_mulai
   late TextEditingController _metodeController;
   late TextEditingController _tanggalJadwalController;
   late TextEditingController _ruangKuliahController;
@@ -145,71 +180,74 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
   String? _selectedJenisPertemuan;
   final List<String> _jenisPertemuanOptions = ['UAS', 'UTS', 'Materi', 'Praktek'];
 
-  String? _selectedStatus;
-  final List<String> _statusOptions = ['Offline', 'Online'];
+  String? _selectedStatus; // ini adalah status_jadwal, BUKAN metode (Offline/Online)
+  final List<String> _statusOptions = ['Aktif', 'Selesai', 'Dibatalkan']; // Contoh status jadwal
 
   bool _isEditing = false; // State untuk mengontrol mode edit
+  bool _isLoading = false; // State untuk indikator loading saat menyimpan
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>(); // Kunci untuk mengontrol Scaffold
+  final String _dosenToken = 'pQuALuRdwhD9RTAi7cUYmEREDOq594ckJMSQcjWdHKfxQthH2e99lfZGzUvtiJJC'; // Token autentikasi
 
   @override
   void initState() {
     super.initState();
-    // Inisialisasi locale untuk DateFormat
     initializeDateFormatting('id_ID', null);
 
-    // Inisialisasi controllers dengan data dari initialDetails
-    _programStudiController = TextEditingController(text: widget.initialDetails.programStudi);
-    _mataKuliahController = TextEditingController(text: widget.initialDetails.mataKuliah);
-    _kurikulumController = TextEditingController(text: widget.initialDetails.kurikulum);
-    _kapasitasController = TextEditingController(text: widget.initialDetails.kapasitas);
-    _periodeController = TextEditingController(text: widget.initialDetails.periode);
-    _namaKelasController = TextEditingController(text: widget.initialDetails.namaKelas);
-    _sistemKuliahController = TextEditingController(text: widget.initialDetails.sistemKuliah);
-
-    _sesiController = TextEditingController(text: widget.initialDetails.sesi);
-    _metodeController = TextEditingController(text: widget.initialDetails.metode);
-    _tanggalJadwalController = TextEditingController(text: widget.initialDetails.tanggalJadwal);
-    _ruangKuliahController = TextEditingController(text: widget.initialDetails.ruangKuliah);
-    _waktuSelesaiController = TextEditingController(text: widget.initialDetails.waktuSelesai);
-    _keteranganRuangKuliahController = TextEditingController(text: widget.initialDetails.keteranganRuangKuliah);
-    _urlKuliahOnlineController = TextEditingController(text: widget.initialDetails.urlKuliahOnline);
-
-    _selectedJenisPertemuan = widget.initialDetails.jenisPertemuan;
-    _selectedStatus = widget.initialDetails.status;
-
+    _initializeControllers(widget.initialDetails);
     _setEditingMode(false); // Default: tidak dalam mode edit
+  }
+
+  // Helper untuk menginisialisasi controller
+  void _initializeControllers(ClassDetails details) {
+    _programStudiController = TextEditingController(text: details.programStudi);
+    _mataKuliahController = TextEditingController(text: details.mataKuliah);
+    _kurikulumController = TextEditingController(text: details.kurikulum);
+    _kapasitasController = TextEditingController(text: details.kapasitas);
+    _periodeController = TextEditingController(text: details.periode);
+    _namaKelasController = TextEditingController(text: details.namaKelas);
+    _sistemKuliahController = TextEditingController(text: details.sistemKuliah);
+
+    _sesiController = TextEditingController(text: details.sesi);
+    _metodeController = TextEditingController(text: details.metode);
+    _tanggalJadwalController = TextEditingController(text: details.tanggalJadwal);
+    _ruangKuliahController = TextEditingController(text: details.ruangKuliah);
+    _waktuSelesaiController = TextEditingController(text: details.waktuSelesai);
+    _keteranganRuangKuliahController = TextEditingController(text: details.keteranganRuangKuliah);
+    _urlKuliahOnlineController = TextEditingController(text: details.urlKuliahOnline);
+
+    _selectedJenisPertemuan = details.jenisPertemuan;
+    _selectedStatus = details.status;
   }
 
   // Fungsi untuk mengaktifkan/menonaktifkan mode edit
   void _setEditingMode(bool editing) {
     setState(() {
       _isEditing = editing;
-      // Mengatur ulang selection tidak lagi diperlukan untuk readOnly
     });
   }
 
   // Fungsi untuk menampilkan Date Picker
   Future<void> _selectDate(BuildContext context) async {
-    if (!_isEditing) return; // Hanya bisa diakses saat mode edit
+    if (!_isEditing) return;
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _tanggalJadwalController.text.isNotEmpty
+      initialDate: _tanggalJadwalController.text.isNotEmpty && _tanggalJadwalController.text != 'N/A'
           ? DateFormat('dd MMMM yyyy', 'id_ID').parse(_tanggalJadwalController.text)
-          : DateTime.now(), // Menggunakan tanggal yang ada atau tanggal saat ini
+          : DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF9FBADE), // Warna header kalender
-              onPrimary: Colors.white, // Warna teks di header
-              onSurface: Color(0xFF37474F), // Warna teks di kalender
+              primary: Color(0xFF9FBADE),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF37474F),
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF9FBADE), // Warna tombol cancel/ok
+                foregroundColor: const Color(0xFF9FBADE),
               ),
             ),
           ),
@@ -219,30 +257,30 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
     );
     if (picked != null) {
       setState(() {
-        _tanggalJadwalController.text = DateFormat('dd MMMM yyyy', 'id_ID').format(picked); // Format yang benar
+        _tanggalJadwalController.text = DateFormat('dd MMMM yyyy', 'id_ID').format(picked);
       });
     }
   }
 
   // Fungsi untuk menampilkan Time Picker
-  Future<void> _selectTime(BuildContext context) async {
-    if (!_isEditing) return; // Hanya bisa diakses saat mode edit
+  Future<void> _selectTime(BuildContext context, TextEditingController controller) async {
+    if (!_isEditing) return;
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: _waktuSelesaiController.text.isNotEmpty
-          ? TimeOfDay.fromDateTime(DateFormat('HH:mm').parse(_waktuSelesaiController.text))
-          : TimeOfDay.now(), // Menggunakan waktu yang ada atau waktu saat ini
+      initialTime: controller.text.isNotEmpty && controller.text != 'N/A'
+          ? TimeOfDay.fromDateTime(DateFormat('HH:mm').parse(controller.text))
+          : TimeOfDay.now(),
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF9FBADE), // Warna header time picker
-              onPrimary: Colors.white, // Warna teks di header
-              onSurface: Color(0xFF37474F), // Warna angka di time picker
+              primary: Color(0xFF9FBADE),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF37474F),
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF9FBADE), // Warna tombol cancel/ok
+                foregroundColor: const Color(0xFF9FBADE),
               ),
             ),
           ),
@@ -252,7 +290,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
     );
     if (picked != null) {
       setState(() {
-        _waktuSelesaiController.text = picked.format(context); // Format waktu
+        controller.text = picked.format(context);
       });
     }
   }
@@ -260,26 +298,112 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
   // Fungsi untuk reset semua field ke nilai awal (initialDetails)
   void _resetFields() {
     setState(() {
-      _sesiController.text = widget.initialDetails.sesi;
-      _metodeController.text = widget.initialDetails.metode;
-      _tanggalJadwalController.text = widget.initialDetails.tanggalJadwal;
-      _ruangKuliahController.text = widget.initialDetails.ruangKuliah;
-      _waktuSelesaiController.text = widget.initialDetails.waktuSelesai;
-      _keteranganRuangKuliahController.text = widget.initialDetails.keteranganRuangKuliah;
-      _selectedJenisPertemuan = widget.initialDetails.jenisPertemuan;
-      _urlKuliahOnlineController.text = widget.initialDetails.urlKuliahOnline;
-      _selectedStatus = widget.initialDetails.status;
-
-      _setEditingMode(false); // Kembali ke mode non-edit setelah reset
+      _initializeControllers(widget.initialDetails); // Inisialisasi ulang dengan data awal
+      _setEditingMode(false);
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Formulir telah direset ke nilai awal.')),
     );
   }
 
+  // Fungsi untuk menyimpan perubahan ke backend
+  Future<void> _saveChanges() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Format tanggal kembali ke YYYY-MM-DD untuk backend
+    String formattedTanggalJadwal;
+    try {
+      formattedTanggalJadwal = DateFormat('yyyy-MM-dd').format(
+          DateFormat('dd MMMM yyyy', 'id_ID').parse(_tanggalJadwalController.text));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Format tanggal tidak valid.')),
+      );
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
+    final Map<String, dynamic> updatedData = {
+      // Pastikan keys ini cocok dengan nama kolom di tabel 'presensi' atau DTO di Laravel Anda
+      'waktu_mulai': _sesiController.text, // Sesi
+      'metode': _metodeController.text,
+      'tanggal_jadwal': formattedTanggalJadwal,
+      'ruang_kuliah': _ruangKuliahController.text,
+      'waktu_selesai': _waktuSelesaiController.text,
+      'keterangan_ruang': _keteranganRuangKuliahController.text,
+      'jenis_pertemuan': _selectedJenisPertemuan,
+      'url_kuliah_online': _urlKuliahOnlineController.text,
+      'status_jadwal': _selectedStatus, // Sesuaikan dengan field di DB
+    };
+
+    // Remove null values to avoid sending them if not explicitly needed by backend
+    updatedData.removeWhere((key, value) => value == null || value == 'N/A' || value.isEmpty);
+
+    // Endpoint untuk UPDATE pertemuan (Laravel PUT/PATCH)
+    // Asumsi route Anda adalah /api/presensi/pertemuan/{id}
+    final String apiUrl = 'https://ti054e01.agussbn.my.id/api/presensi/pertemuan/${widget.initialDetails.id}';
+
+    try {
+      final response = await http.put( // Gunakan PUT atau PATCH
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_dosenToken',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(updatedData),
+      );
+
+      print('Request URL (DetailKelasPage Update): $apiUrl');
+      print('Request Body (DetailKelasPage Update): ${jsonEncode(updatedData)}');
+      print('Response Status Code (DetailKelasPage Update): ${response.statusCode}');
+      print('Response Body (DetailKelasPage Update): ${response.body}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        // Jika API mengembalikan data pertemuan yang diperbarui, gunakan itu
+        final updatedMeetingData = responseData['data'] ?? responseData;
+
+        // Perbarui ClassDetails yang dipegang oleh widget
+        final updatedClassDetails = ClassDetails.fromJson(updatedMeetingData);
+        _initializeControllers(updatedClassDetails); // Perbarui controllers dengan data terbaru
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Perubahan jadwal berhasil disimpan!')),
+        );
+        _setEditingMode(false); // Kembali ke mode non-edit
+        // Opsional: pop dan kirim data kembali ke halaman sebelumnya jika perlu refresh daftar
+        // Navigator.pop(context, updatedClassDetails);
+      } else {
+        String errorMessage = 'Gagal menyimpan perubahan. Status Code: ${response.statusCode}';
+        try {
+          final errorData = json.decode(response.body);
+          errorMessage = errorData['message'] ?? errorData['error'] ?? errorMessage;
+        } catch (e) {
+          // Jika respons bukan JSON
+          errorMessage = 'Gagal menyimpan perubahan. Status Code: ${response.statusCode}. Respon tidak valid.';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error koneksi atau parsing data: $e. Pastikan backend berjalan.')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
-    // Dispose controllers yang dibuat di sini
     _programStudiController.dispose();
     _mataKuliahController.dispose();
     _kurikulumController.dispose();
@@ -301,8 +425,8 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey, // Tetapkan kunci scaffold
-      backgroundColor: Colors.grey[50], // Latar belakang yang lebih lembut
+      key: _scaffoldKey,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
           'Detail Kelas',
@@ -311,45 +435,42 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFF90CAF9), // Warna AppBar yang serasi
+        backgroundColor: const Color(0xFF90CAF9),
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white), // Warna ikon back
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          // Tambahkan aksi untuk membuka drawer
           GestureDetector(
             onTap: () {
-              _scaffoldKey.currentState?.openEndDrawer(); // Membuka EndDrawer
+              _scaffoldKey.currentState?.openEndDrawer();
             },
             child: const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Icon(Icons.menu, color: Colors.white, size: 24), // Ikon menu di kanan
+              child: Icon(Icons.menu, color: Colors.white, size: 24),
             ),
           ),
         ],
       ),
       endDrawer: Drawer(
-        // Menambahkan Drawer di sisi kanan (endDrawer)
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
             DrawerHeader(
               decoration: const BoxDecoration(
-                color: Color(0xFF9FBADE), // Warna header drawer
+                color: Color(0xFF9FBADE),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   CircleAvatar(
-                    // Avatar profil
                     radius: 30,
                     backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 40, color: Colors.grey[700]), // Ikon default
+                    child: Icon(Icons.person, size: 40, color: Colors.grey[700]),
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    'Jamilatul Azkia Putri',
+                    'Jamilatul Azkia Putri', // Ganti dengan nama dosen sebenarnya
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -367,10 +488,10 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.schedule, color: Color(0xFF37474F)), // Ikon Jadwal Perkuliahan
+              leading: const Icon(Icons.schedule, color: Color(0xFF37474F)),
               title: const Text('Jadwal Perkuliahan', style: TextStyle(color: Color(0xFF37474F))),
               onTap: () {
-                Navigator.pop(context); // Tutup drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const JadwalPerkuliahanPage()),
@@ -378,21 +499,21 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.group, color: Color(0xFF37474F)), // Ikon Peserta Kelas
+              leading: const Icon(Icons.group, color: Color(0xFF37474F)),
               title: const Text('Peserta Kelas', style: TextStyle(color: Color(0xFF37474F))),
               onTap: () {
-                Navigator.pop(context); // Tutup drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const PesertaKelasPage()), // Navigasi ke PesertaKelasPage
+                  MaterialPageRoute(builder: (context) => const PesertaKelasPage()),
                 );
               },
             ),
             ListTile(
-              leading: const Icon(Icons.check_circle_outline, color: Color(0xFF37474F)), // Ikon Presensi Kelas
+              leading: const Icon(Icons.check_circle_outline, color: Color(0xFF37474F)),
               title: const Text('Presensi Kelas', style: TextStyle(color: Color(0xFF37474F))),
               onTap: () {
-                Navigator.pop(context); // Tutup drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const PresensiKelasPage()),
@@ -400,17 +521,16 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.grade, color: Color(0xFF37474F)), // Ikon Nilai Perkuliahan
+              leading: const Icon(Icons.grade, color: Color(0xFF37474F)),
               title: const Text('Nilai Perkuliahan', style: TextStyle(color: Color(0xFF37474F))),
               onTap: () {
-                Navigator.pop(context); // Tutup drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const NilaiPerkuliahanPage()),
                 );
               },
             ),
-            // Anda bisa menambahkan item lain di sini
           ],
         ),
       ),
@@ -419,7 +539,6 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bagian informasi dasar kelas (Card atas)
             Card(
               elevation: 4,
               shape: RoundedRectangleBorder(
@@ -442,14 +561,11 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
               ),
             ),
             const SizedBox(height: 30),
-
             const Text(
-              'Detail Jadwal', // Mengubah judul agar lebih sesuai
+              'Detail Jadwal',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF37474F)),
             ),
             const SizedBox(height: 15),
-
-            // Bagian detail kelas (input fields)
             Card(
               elevation: 4,
               shape: RoundedRectangleBorder(
@@ -459,19 +575,18 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
-                    _buildTextFieldRow('Sesi', _sesiController),
+                    _buildTextFieldRow('Waktu Mulai (Sesi)', _sesiController,
+                        onTap: () => _selectTime(context, _sesiController), suffixIcon: Icons.access_time),
                     const SizedBox(height: 15),
                     _buildTextFieldRow('Metode', _metodeController),
                     const SizedBox(height: 15),
-                    // Menggunakan onTap untuk Tanggal Jadwal
                     _buildTextFieldRow('Tanggal Jadwal', _tanggalJadwalController,
                         onTap: () => _selectDate(context), suffixIcon: Icons.calendar_today),
                     const SizedBox(height: 15),
                     _buildTextFieldRow('Ruang Kuliah', _ruangKuliahController),
                     const SizedBox(height: 15),
-                    // Menggunakan onTap untuk Waktu Selesai
                     _buildTextFieldRow('Waktu Selesai', _waktuSelesaiController,
-                        onTap: () => _selectTime(context), suffixIcon: Icons.access_time),
+                        onTap: () => _selectTime(context, _waktuSelesaiController), suffixIcon: Icons.access_time),
                     const SizedBox(height: 15),
                     _buildTextFieldRow('Keterangan Ruang Kuliah', _keteranganRuangKuliahController),
                     const SizedBox(height: 15),
@@ -484,7 +599,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                     const SizedBox(height: 15),
                     _buildTextFieldRow('URL Kuliah Online', _urlKuliahOnlineController),
                     const SizedBox(height: 15),
-                    _buildDropdownField('Status', _selectedStatus, _statusOptions, (String? newValue) {
+                    _buildDropdownField('Status Jadwal', _selectedStatus, _statusOptions, (String? newValue) {
                       setState(() {
                         _selectedStatus = newValue;
                       });
@@ -494,64 +609,35 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
               ),
             ),
             const SizedBox(height: 30),
-
-            // Tombol-tombol Aksi
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isEditing
-                        ? () {
-                            // Buat objek ClassDetails baru dengan data saat ini
-                            final updatedDetails = ClassDetails(
-                              programStudi: _programStudiController.text,
-                              mataKuliah: _mataKuliahController.text,
-                              kurikulum: _kurikulumController.text,
-                              kapasitas: _kapasitasController.text,
-                              periode: _periodeController.text,
-                              namaKelas: _namaKelasController.text,
-                              sistemKuliah: _sistemKuliahController.text,
-                              sesi: _sesiController.text,
-                              metode: _metodeController.text,
-                              tanggalJadwal: _tanggalJadwalController.text,
-                              ruangKuliah: _ruangKuliahController.text,
-                              waktuSelesai: _waktuSelesaiController.text,
-                              keteranganRuangKuliah: _keteranganRuangKuliahController.text,
-                              jenisPertemuan: _selectedJenisPertemuan,
-                              urlKuliahOnline: _urlKuliahOnlineController.text,
-                              status: _selectedStatus,
-                            );
-                            // Kirim data kembali ke halaman sebelumnya (MengajarHariIniPage)
-                            Navigator.pop(context, updatedDetails);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Perubahan disimpan!')),
-                            );
-                            _setEditingMode(false);
-                          }
-                        : null, // Nonaktifkan jika tidak dalam mode edit
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9FBADE), // Warna biru konsisten
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      elevation: _isEditing ? 2 : 0, // Shadow hanya saat aktif
-                    ),
-                    child: const Text('Simpan'),
-                  ),
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ElevatedButton(
+                          onPressed: _isEditing ? _saveChanges : null, // Panggil _saveChanges
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF9FBADE),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            elevation: _isEditing ? 2 : 0,
+                          ),
+                          child: const Text('Simpan'),
+                        ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
                       if (_isEditing) {
-                        // Jika sedang dalam mode edit, tombol ini akan menjadi "Batal Edit"
-                        _resetFields(); // Reset kembali ke nilai awal saat menekan 'Batal Edit'
+                        _resetFields();
                       }
-                      _setEditingMode(!_isEditing); // Toggle mode edit
+                      _setEditingMode(!_isEditing);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber, // Warna Edit
+                      backgroundColor: Colors.amber,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -564,10 +650,10 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      _resetFields(); // Reset field
+                      _resetFields();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent, // Warna Reset
+                      backgroundColor: Colors.redAccent,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -593,7 +679,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120, // Lebar tetap untuk label
+            width: 120,
             child: Text(
               '$label :',
               style: const TextStyle(
@@ -621,10 +707,10 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
     return GestureDetector(
       onTap: onTap,
       child: AbsorbPointer(
-        absorbing: !_isEditing && onTap != null, // Hanya serap jika tidak edit dan ada onTap
+        absorbing: !_isEditing && onTap != null,
         child: TextField(
           controller: controller,
-          readOnly: !_isEditing || onTap != null, // TextField read-only jika tidak edit ATAU ada onTap
+          readOnly: !_isEditing || onTap != null,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: _isEditing ? Colors.black54 : Colors.grey[700]),
@@ -652,7 +738,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
               ),
             ),
             contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 15.0),
-            suffixIcon: suffixIcon != null && _isEditing // Tampilkan ikon hanya jika ada dan dalam mode edit
+            suffixIcon: suffixIcon != null && _isEditing
                 ? Icon(suffixIcon, color: const Color(0xFF9FBADE))
                 : null,
           ),
@@ -700,7 +786,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
           value: selectedValue,
           icon: Icon(Icons.arrow_drop_down, color: _isEditing ? const Color(0xFF9FBADE) : Colors.grey),
           isExpanded: true,
-          onChanged: _isEditing ? onChanged : null, // Hanya aktif jika dalam mode edit
+          onChanged: _isEditing ? onChanged : null,
           items: options.map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
               value: value,

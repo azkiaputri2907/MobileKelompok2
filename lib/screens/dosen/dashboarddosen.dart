@@ -2,16 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile_kelompok2/screens/dosen/kalender_page.dart';
-import 'package:mobile_kelompok2/screens/dosen/jadwal_dosen.dart'; // Asumsi JadwalPage dan MengajarHariIniPage ada di sini atau diimpor
+import 'package:mobile_kelompok2/screens/dosen/jadwal_dosen.dart';
 import 'package:mobile_kelompok2/screens/dosen/tanggungan.dart';
-import 'package:mobile_kelompok2/screens/dosen/detail_kelas.dart'; // Asumsi BukaKelasPage ada di sini
+import 'package:mobile_kelompok2/screens/dosen/detail_kelas.dart';
 import 'package:mobile_kelompok2/screens/auth/login_page.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 // GANTI DENGAN BASE URL SERVERMU
-const String baseUrl = 'https://ti054e01.agussbn.my.id/api';
+const String baseUrl = 'https://ti054e01.agussbn.my.id/api/jadwal';
+
+// --- 1. Model Data Mata Kuliah ---
+class MataKuliah {
+  final int id;
+  final int idProdi;
+  final String nama;
+  final double sks;
+  final int semester;
+
+  MataKuliah({
+    required this.id,
+    required this.idProdi,
+    required this.nama,
+    required this.sks,
+    required this.semester,
+  });
+
+  factory MataKuliah.fromJson(Map<String, dynamic> json) {
+    return MataKuliah(
+      id: json['id'],
+      idProdi: json['id_prodi'],
+      nama: json['nama'],
+      sks: json['sks'].toDouble(), // Pastikan dikonversi ke double
+      semester: json['semester'],
+    );
+  }
+}
 
 // ====== Placeholder Pages for Navigation ======
 // Pastikan halaman-halaman ini didefinisikan di file terpisah dan diimpor dengan benar.
@@ -100,19 +127,23 @@ class DashboardDosen extends StatefulWidget {
 
 class _DashboardDosenState extends State<DashboardDosen> {
   int _currentIndex = 0;
-  bool _showTasks = true; // Ini mungkin tidak lagi relevan jika card dinamis
+  bool _showTasks = true;
   bool _hasJadwalHariIni = false;
   bool _hasTanggungan = false;
+  List<MataKuliah> _mataKuliahList = []; // List untuk menyimpan data mata kuliah
+  bool _isLoadingMatkul = true; // State untuk indikator loading mata kuliah
 
   // HATI-HATI: Token ini sebaiknya didapatkan dari SecureStorage, bukan hardcode
   final String _dosenToken = 'pQuALuRdwhD9RTAi7cUYmEREDOq594ckJMSQcjWdHKfxQthH2e99lfZGzUvtiJJC';
   final String _apiUrlJadwal = '$baseUrl/jadwal'; // Menggunakan baseUrl yang sudah didefinisikan
+  final String _apiUrlMatkul = '$baseUrl/matkul'; // API endpoint untuk daftar mata kuliah
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('id_ID', null);
-    _fetchData();
+    _fetchData(); // Mengambil data jadwal
+    _fetchMataKuliah(); // Mengambil data mata kuliah
   }
 
   Future<void> _fetchData() async {
@@ -162,6 +193,44 @@ class _DashboardDosenState extends State<DashboardDosen> {
     }
   }
 
+  // --- 2. Fungsi untuk Mengambil Data Mata Kuliah ---
+  Future<void> _fetchMataKuliah() async {
+    setState(() {
+      _isLoadingMatkul = true; // Set loading true saat memulai fetch
+    });
+    try {
+      final response = await http.get(
+        Uri.parse(_apiUrlMatkul), // Mengambil semua mata kuliah
+        headers: {
+          'Authorization': 'Bearer $_dosenToken',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // Pastikan struktur respons API Anda memiliki kunci 'data' yang berisi list mata kuliah
+        if (data != null && data['data'] is List) {
+          setState(() {
+            _mataKuliahList = (data['data'] as List)
+                .map((item) => MataKuliah.fromJson(item))
+                .toList();
+          });
+        } else {
+          debugPrint('Struktur respons API matkul tidak sesuai: $data');
+        }
+      } else {
+        debugPrint('Gagal ambil data mata kuliah: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error saat mengambil data mata kuliah: $e');
+    } finally {
+      setState(() {
+        _isLoadingMatkul = false; // Set loading false setelah selesai fetch
+      });
+    }
+  }
+
   void _updateCurrentIndex(int index) {
     setState(() {
       _currentIndex = index;
@@ -171,8 +240,8 @@ class _DashboardDosenState extends State<DashboardDosen> {
   @override
   Widget build(BuildContext context) {
     Widget bodyContent;
-    String appBarTitle = ''; // Default title for other pages
-    PreferredSizeWidget? appBarWidget; // Nullable AppBar to control its visibility
+    String appBarTitle = '';
+    PreferredSizeWidget? appBarWidget;
 
     switch (_currentIndex) {
       case 0: // Home / Dashboard View
@@ -183,45 +252,40 @@ class _DashboardDosenState extends State<DashboardDosen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Bagian status "Mengajar Hari Ini", "Tanggungan", "Kalender"
-              // Menggunakan LayoutBuilder untuk mendapatkan ukuran maksimum yang tersedia
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final double itemWidth = (constraints.maxWidth - 15.0) / 2; // Hitung lebar item
+                  final double itemWidth = (constraints.maxWidth - 15.0) / 2;
                   return GridView.count(
                     shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(), // Menonaktifkan scroll GridView
+                    physics: const NeverScrollableScrollPhysics(),
                     crossAxisCount: 2,
                     crossAxisSpacing: 15.0,
                     mainAxisSpacing: 15.0,
-                    // Sesuaikan childAspectRatio berdasarkan lebar item dan tinggi yang diinginkan
-                    // Tinggi yang diinginkan sekitar 100-120 untuk menghindari overflow
-                    childAspectRatio: itemWidth / 110, // Menyesuaikan tinggi kartu
+                    childAspectRatio: itemWidth / 110,
                     children: [
-                      // Hanya tampilkan card jika ada jadwal hari ini
                       if (_hasJadwalHariIni)
                         _buildStatusCard(
                           'Mengajar Hari Ini',
                           const Color(0xFF90CAF9),
-                          icon: Icons.star, // Ikon bintang untuk Mengajar Hari Ini
-                          subtitle: 'Anda Memiliki Jadwal Hari Ini', // Subtitle baru ditambahkan
+                          icon: Icons.star,
+                          subtitle: 'Anda Memiliki Jadwal Hari Ini',
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => MengajarHariIniPage(userName: widget.userName, dosenId: widget.dosenId)), // Navigasi ke halaman Mengajar Hari Ini
+                              MaterialPageRoute(builder: (context) => MengajarHariIniPage(userName: widget.userName, dosenId: widget.dosenId)),
                             );
                           },
                         ),
-                      // Hanya tampilkan card jika ada tanggungan
                       if (_hasTanggungan)
                         _buildStatusCard(
                           'Tanggungan',
                           const Color(0xFF191970),
-                          icon: Icons.task_alt, // Mengganti Icons.calendar_check dengan Icons.task_alt
-                          subtitle: 'Lihat Tanggungan Anda', // Subtitle baru ditambahkan
+                          icon: Icons.task_alt,
+                          subtitle: 'Lihat Tanggungan Anda',
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => TanggunganPage(userName: widget.userName, dosenId: widget.dosenId)), // Mengganti TanggunganSayaPage
+                              MaterialPageRoute(builder: (context) => TanggunganPage(userName: widget.userName, dosenId: widget.dosenId)),
                             );
                           },
                         ),
@@ -229,11 +293,11 @@ class _DashboardDosenState extends State<DashboardDosen> {
                         'Kalender',
                         const Color(0xFF5F9EA0),
                         icon: Icons.calendar_month,
-                        showCalendarIcon: true, // Ikon kalender dan tanggal
+                        showCalendarIcon: true,
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const KalenderPage()), // Navigasi ke KalenderPage
+                            MaterialPageRoute(builder: (context) => const KalenderPage()),
                           );
                         },
                       ),
@@ -242,14 +306,33 @@ class _DashboardDosenState extends State<DashboardDosen> {
                 },
               ),
               const SizedBox(height: 32.0),
-              _buildTaskSection(), // Panggil method _buildTaskSection
+              _buildTaskSection(), // Bagian "All Tasks"
+              const SizedBox(height: 32.0), // Spasi sebelum daftar mata kuliah
+              // --- 3. Menampilkan Data Mata Kuliah ---
+              Text(
+                'Daftar Mata Kuliah',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              ),
+              const SizedBox(height: 16),
+              _isLoadingMatkul
+                  ? const Center(child: CircularProgressIndicator())
+                  : _mataKuliahList.isEmpty
+                      ? const Center(child: Text('Tidak ada mata kuliah tersedia.'))
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _mataKuliahList.length,
+                          itemBuilder: (context, index) {
+                            final matkul = _mataKuliahList[index];
+                            return _buildMatkulCard(matkul); // Gunakan kartu baru untuk mata kuliah
+                          },
+                        ),
             ],
           ),
         );
         break;
       case 1: // Tanggungan
         appBarTitle = 'Tanggungan Anda';
-        // Asumsi TanggunganPage juga memerlukan userName dan dosenId
         bodyContent = TanggunganPage(userName: widget.userName, dosenId: widget.dosenId);
         break;
       case 2: // Ini seharusnya tidak akan tercapai karena FAB menangani navigasi secara langsung
@@ -300,12 +383,10 @@ class _DashboardDosenState extends State<DashboardDosen> {
               leading: const Icon(Icons.logout),
               title: const Text('Keluar'),
               onTap: () {
-                // Lakukan logout dan navigasi ke LoginScreen
-                // Anda mungkin perlu memanggil AuthService().logout() di sini
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  (route) => false, // Menghapus semua route sebelumnya
+                  (route) => false,
                 );
               },
             ),
@@ -318,11 +399,11 @@ class _DashboardDosenState extends State<DashboardDosen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white, // Latar belakang putih untuk body
+      backgroundColor: Colors.white,
       appBar: _currentIndex == 0
-          ? appBarWidget // Menggunakan AppBar kustom untuk home
+          ? appBarWidget
           : AppBar(
-              backgroundColor: Theme.of(context).primaryColor, // Warna AppBar untuk halaman non-home
+              backgroundColor: Theme.of(context).primaryColor,
               elevation: 0,
               title: Text(
                 appBarTitle,
@@ -333,27 +414,25 @@ class _DashboardDosenState extends State<DashboardDosen> {
                 ),
               ),
               centerTitle: true,
-              automaticallyImplyLeading: false, // Menghilangkan tombol back default
+              automaticallyImplyLeading: false,
             ),
       body: bodyContent,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Navigasi ke halaman BukaKelasPage
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const BukaKelasPage()),
           );
         },
-        backgroundColor: Theme.of(context).primaryColor, // Warna primary color theme
+        backgroundColor: Theme.of(context).primaryColor,
         child: const Icon(Icons.add, color: Colors.white, size: 30),
-        shape: const CircleBorder(), // Membuat FAB berbentuk lingkaran
+        shape: const CircleBorder(),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked, // Posisikan di tengah bawah
-      bottomNavigationBar: _buildBottomNavBar(), // Memanggil _buildBottomNavBar
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
-  // Fungsi untuk membangun AppBar khusus Home
   PreferredSizeWidget _buildHomeAppBar() {
     return AppBar(
       backgroundColor: Colors.white,
@@ -411,7 +490,6 @@ class _DashboardDosenState extends State<DashboardDosen> {
     );
   }
 
-  // Fungsi untuk membangun kartu status
   Widget _buildStatusCard(String title, Color color, {IconData? icon, String? subtitle, bool showCalendarIcon = false, VoidCallback? onTap}) {
     return Card(
       elevation: 0,
@@ -445,7 +523,6 @@ class _DashboardDosenState extends State<DashboardDosen> {
     );
   }
 
-  // Fungsi untuk membangun bagian daftar tugas
   Widget _buildTaskSection() {
     return Column(
       children: [
@@ -479,7 +556,6 @@ class _DashboardDosenState extends State<DashboardDosen> {
     );
   }
 
-  // Fungsi untuk membangun kartu tugas individual
   Widget _buildTaskCard(String taskTitle, {VoidCallback? onTap}) {
     IconData iconData;
     switch (taskTitle) {
@@ -525,7 +601,39 @@ class _DashboardDosenState extends State<DashboardDosen> {
     );
   }
 
-  // Fungsi untuk membangun Bottom Navigation Bar
+  // --- Fungsi untuk membangun kartu Mata Kuliah (baru) ---
+  Widget _buildMatkulCard(MataKuliah matkul) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () {
+          // TODO: Implementasi navigasi ke halaman detail mata kuliah jika diperlukan
+          debugPrint('Mata Kuliah ${matkul.nama} diklik!');
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                matkul.nama,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'SKS: ${matkul.sks.toInt()} | Semester: ${matkul.semester}',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              // Anda bisa menambahkan info lain seperti nama prodi jika diambil dari API
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomNavBar() {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
@@ -547,7 +655,6 @@ class _DashboardDosenState extends State<DashboardDosen> {
     );
   }
 
-  // Fungsi untuk membangun item navigasi individual di Bottom Navigation Bar
   Widget _buildNavBarItem(int index, IconData icon, String label) {
     bool isSelected = _currentIndex == index;
     return Expanded(
@@ -561,7 +668,7 @@ class _DashboardDosenState extends State<DashboardDosen> {
             children: [
               Icon(
                 icon,
-                color: isSelected ? Theme.of(context).primaryColor : Colors.grey[400], // Menggunakan primaryColor dari tema
+                color: isSelected ? Theme.of(context).primaryColor : Colors.grey[400],
                 size: 26,
               ),
               Text(

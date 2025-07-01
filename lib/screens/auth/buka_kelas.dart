@@ -1,11 +1,18 @@
-// TODO Implement this library.
+import 'dart:math' as Math;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
+
+// Hapus atau komentari import dashboarddosen.dart jika tidak digunakan lagi di file ini
+// import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart';
+
+// Hapus definisi kelas MataKuliah di sini jika Anda tidak menggunakannya lagi
+// karena BukaKelasPage ini sekarang hanya untuk menambahkan mata kuliah baru,
+// bukan untuk berinteraksi dengan objek MataKuliah yang sudah ada.
+// Jika Anda memang memisahkannya ke models/mata_kuliah.dart, pastikan untuk mengimpornya.
 
 class BukaKelasPage extends StatefulWidget {
+  // === PENTING: Hapus parameter selectedMatkul dari konstruktor ===
   const BukaKelasPage({Key? key}) : super(key: key);
 
   @override
@@ -15,119 +22,58 @@ class BukaKelasPage extends StatefulWidget {
 class _BukaKelasPageState extends State<BukaKelasPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _judulController = TextEditingController();
-  final TextEditingController _sesiController = TextEditingController();
-  final TextEditingController _metodeController = TextEditingController();
-  final TextEditingController _ruangController = TextEditingController();
-  final TextEditingController _waktuSelesaiController = TextEditingController();
-  final TextEditingController _keteranganRuangController = TextEditingController();
-  final TextEditingController _urlOnlineController = TextEditingController();
+  final TextEditingController _namaMatkulController = TextEditingController();
+  final TextEditingController _sksController = TextEditingController();
+  final TextEditingController _semesterController = TextEditingController();
 
-  DateTime? _tanggalJadwal;
-  TimeOfDay? _waktuSelesai;
-
-  String? _jenisPertemuan;
-  String? _status;
+  // Ini tidak perlu jika 'nama_kelas' tidak ada di tabel matakuliah
+  // Anda mungkin perlu menanganinya di backend jika ingin memisahkan
+  // nama mata kuliah dan nama kelas.
+  final TextEditingController _namaKelasController = TextEditingController();
 
   bool _isLoading = false;
 
-  final List<String> jenisPertemuanList = ['UAS', 'UTS', 'Praktek', 'Materi'];
-  final List<String> statusList = ['Offline', 'Online'];
-
-  // Ganti dengan token asli yang kamu simpan aman
+  // Ganti dengan token admin yang valid dan ambil secara dinamis jika memungkinkan
   final String _adminToken = 'pQuALuRdwhD9RTAi7cUYmEREDOq594ckJMSQcjWdHKfxQthH2e99lfZGzUvtiJJC';
 
-  // Ganti sesuai endpoint API untuk simpan jadwal
-  final String _apiUrl = 'https://ti054e01.agussbn.my.id/api/jadwal';
+  // Pastikan URL ini benar untuk endpoint API Anda untuk MENAMBAH MATA KULIAH
+  final String _apiUrl = 'https://ti054e01.agussbn.my.id/api/matkul/buat-matkul';
 
   @override
   void dispose() {
-    _judulController.dispose();
-    _sesiController.dispose();
-    _metodeController.dispose();
-    _ruangController.dispose();
-    _waktuSelesaiController.dispose();
-    _keteranganRuangController.dispose();
-    _urlOnlineController.dispose();
+    _namaMatkulController.dispose();
+    _sksController.dispose();
+    _semesterController.dispose();
+    _namaKelasController.dispose(); // Pastikan didispose juga
     super.dispose();
   }
 
-  Future<void> _pickTanggal() async {
-    showModalBottomSheet(
-      context: context,
-      builder: (_) {
-        return SizedBox(
-          height: 250,
-          child: CupertinoDatePicker(
-            mode: CupertinoDatePickerMode.date,
-            initialDateTime: _tanggalJadwal ?? DateTime.now(),
-            onDateTimeChanged: (DateTime newDate) {
-              setState(() {
-                _tanggalJadwal = newDate;
-              });
-            },
-          ),
-        );
-      },
-    );
+  // === PENTING: Hapus logika yang berhubungan dengan selectedMatkul di initState ===
+  @override
+  void initState() {
+    super.initState();
+    // Tidak ada lagi logika untuk mengisi form dari selectedMatkul
   }
-  Future<void> _pickWaktuSelesai() async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: _waktuSelesai ?? TimeOfDay.now(),
-    );
-    if (picked != null) {
-      setState(() {
-        _waktuSelesai = picked;
-        _waktuSelesaiController.text = picked.format(context);
-      });
-    }
-  }
+
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
-
-    if (_tanggalJadwal == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan pilih tanggal jadwal')),
-      );
-      return;
-    }
-    if (_jenisPertemuan == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan pilih jenis pertemuan')),
-      );
-      return;
-    }
-    if (_status == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan pilih status kelas')),
-      );
-      return;
-    }
-    if (_status == 'Online' && _urlOnlineController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('URL Kuliah Online wajib diisi jika status Online')),
-      );
-      return;
-    }
 
     setState(() {
       _isLoading = true;
     });
 
     final data = {
-      'judul': _judulController.text,
-      'sesi': _sesiController.text,
-      'metode': _metodeController.text,
-      'tanggal_jadwal': _tanggalJadwal!.toIso8601String(),
-      'ruang_kuliah': _ruangController.text,
-      'waktu_selesai': _waktuSelesaiController.text,
-      'keterangan_ruang': _keteranganRuangController.text,
-      'jenis_pertemuan': _jenisPertemuan,
-      'url_kuliah_online': _urlOnlineController.text,
-      'status': _status,
+      'nama': _namaMatkulController.text, // Nama Mata Kuliah
+      'sks': _sksController.text,        // SKS
+      'semester': _semesterController.text, // Semester
+      'id_prodi': '1', // Anda mungkin perlu dropdown untuk memilih prodi atau sesuaikan dengan kebutuhan backend
     };
+
+    // Jika 'nama_kelas' perlu dikirim, Anda harus memastikan API backend Anda siap menerimanya
+    // dan menanganinya (misalnya menyimpannya di tabel terpisah atau mengabaikannya).
+    // Untuk saat ini, saya akan mengomentari jika itu bukan bagian dari tabel 'matkul'.
+    // data['nama_kelas'] = _namaKelasController.text; // Contoh jika diperlukan
 
     try {
       final response = await http.post(
@@ -135,26 +81,48 @@ class _BukaKelasPageState extends State<BukaKelasPage> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_adminToken',
+          'Accept': 'application/json',
         },
         body: jsonEncode(data),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Jadwal berhasil dibuat')),
-        );
-        Navigator.of(context).pop(); // Kembali ke halaman sebelumnya
+      print('Request URL: $_apiUrl');
+      print('Request Headers: ${response.request?.headers}');
+      print('Request Body: ${jsonEncode(data)}');
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Headers: ${response.headers}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (mounted) { // Periksa mounted sebelum menggunakan context
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Mata Kuliah berhasil ditambahkan!')),
+          );
+          Navigator.of(context).pop();
+        }
       } else {
-        final resBody = jsonDecode(response.body);
-        final errorMsg = resBody['message'] ?? 'Terjadi kesalahan saat membuat jadwal';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
-        );
+        if (mounted) { // Periksa mounted sebelum menggunakan context
+          if (response.headers['content-type']?.contains('application/json') ?? false) {
+            final resBody = jsonDecode(response.body);
+            final errorMsg = resBody['message'] ?? resBody['error'] ?? 'Terjadi kesalahan yang tidak diketahui dari API.';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error API (${response.statusCode}): $errorMsg')),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error dari server (bukan JSON): Status ${response.statusCode} - ${response.body.substring(0, Math.min(response.body.length, 150))}...'),
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (mounted) { // Periksa mounted sebelum menggunakan context
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error koneksi atau parsing data: $e. Pastikan backend berjalan dan terakses.')),
+        );
+      }
     } finally {
       setState(() {
         _isLoading = false;
@@ -166,8 +134,9 @@ class _BukaKelasPageState extends State<BukaKelasPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Buka Kelas Baru'),
+        title: const Text('Tambah Mata Kuliah Baru'),
         backgroundColor: const Color(0xFF90CAF9),
+        foregroundColor: Colors.white, // Agar teks judul putih
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -175,149 +144,55 @@ class _BukaKelasPageState extends State<BukaKelasPage> {
           key: _formKey,
           child: ListView(
             children: [
-              // Detail Jadwal / Judul
               TextFormField(
-                controller: _judulController,
+                controller: _namaMatkulController,
                 decoration: const InputDecoration(
-                  labelText: 'Detail Jadwal (Judul)',
+                  labelText: 'Nama Mata Kuliah',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.school),
                 ),
-                validator: (value) => (value == null || value.isEmpty) ? 'Judul harus diisi' : null,
+                validator: (value) => (value == null || value.isEmpty) ? 'Nama Mata Kuliah harus diisi' : null,
               ),
               const SizedBox(height: 16),
 
-              // Sesi
               TextFormField(
-                controller: _sesiController,
+                controller: _sksController,
+                keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Sesi',
+                  labelText: 'Jumlah SKS',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.numbers),
                 ),
-                validator: (value) => (value == null || value.isEmpty) ? 'Sesi harus diisi' : null,
-              ),
-              const SizedBox(height: 16),
-
-              // Metode
-              TextFormField(
-                controller: _metodeController,
-                decoration: const InputDecoration(
-                  labelText: 'Metode',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => (value == null || value.isEmpty) ? 'Metode harus diisi' : null,
-              ),
-              const SizedBox(height: 16),
-
-              // Tanggal Jadwal
-              InkWell(
-                onTap: _pickTanggal,
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal Jadwal',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                child: Text(
-                  _tanggalJadwal == null
-                      ? 'Pilih tanggal'
-                      : DateFormat('dd MMMM yyyy').format(_tanggalJadwal!),
-                ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Ruang Kuliah
-              TextFormField(
-                controller: _ruangController,
-                decoration: const InputDecoration(
-                  labelText: 'Ruang Kuliah',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => (value == null || value.isEmpty) ? 'Ruang kuliah harus diisi' : null,
-              ),
-              const SizedBox(height: 16),
-
-              // Waktu Selesai
-              InkWell(
-                onTap: _pickWaktuSelesai,
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Waktu Selesai',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.access_time),
-                  ),
-                  child: Text(
-                    _waktuSelesaiController.text.isEmpty
-                        ? 'Pilih waktu selesai'
-                        : _waktuSelesaiController.text,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Keterangan Ruang Kuliah
-              TextFormField(
-                controller: _keteranganRuangController,
-                decoration: const InputDecoration(
-                  labelText: 'Keterangan Ruang Kuliah',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Jenis Pertemuan (Dropdown)
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Jenis Pertemuan',
-                  border: OutlineInputBorder(),
-                ),
-                value: _jenisPertemuan,
-                items: jenisPertemuanList
-                    .map((jp) => DropdownMenuItem(value: jp, child: Text(jp)))
-                    .toList(),
-                onChanged: (val) => setState(() => _jenisPertemuan = val),
-                validator: (value) => value == null ? 'Jenis pertemuan harus dipilih' : null,
-              ),
-              const SizedBox(height: 16),
-
-              // URL Kuliah Online
-              TextFormField(
-                controller: _urlOnlineController,
-                decoration: const InputDecoration(
-                  labelText: 'URL Kuliah Online',
-                  border: OutlineInputBorder(),
-                ),
-                enabled: _status == 'Online',
                 validator: (value) {
-                  if (_status == 'Online' && (value == null || value.isEmpty)) {
-                    return 'URL harus diisi jika status Online';
+                  if (value == null || value.isEmpty) {
+                    return 'SKS harus diisi';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'SKS harus berupa angka (misal: 3.0)';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
 
-              // Status (Dropdown)
-              DropdownButtonFormField<String>(
+              TextFormField(
+                controller: _semesterController,
+                keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Status',
+                  labelText: 'Semester',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.calendar_month),
                 ),
-                value: _status,
-                items: statusList
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                    .toList(),
-                onChanged: (val) {
-                  setState(() {
-                    _status = val;
-                    if (_status == 'Offline') {
-                      _urlOnlineController.clear();
-                    }
-                  });
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Semester harus diisi';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Semester harus berupa angka (misal: 1, 2, dst.)';
+                  }
+                  return null;
                 },
-                validator: (value) => value == null ? 'Status harus dipilih' : null,
               ),
-
               const SizedBox(height: 24),
 
               _isLoading
@@ -326,11 +201,15 @@ class _BukaKelasPageState extends State<BukaKelasPage> {
                       onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF90CAF9),
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                       child: const Text(
-                        'Simpan Jadwal',
-                        style: TextStyle(fontSize: 16),
+                        'Simpan Mata Kuliah',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
             ],

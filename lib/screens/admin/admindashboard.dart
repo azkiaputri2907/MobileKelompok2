@@ -1,47 +1,82 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart'; // Tetap dibutuhkan jika ada formatting tanggal/waktu di fungsi lain
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+
+// Pastikan import ini menunjuk ke BukaKelasPage yang sudah dimodifikasi
 import 'package:mobile_kelompok2/screens/auth/buka_kelas.dart';
 
+// Import halaman-halaman admin yang spesifik
 import 'package:mobile_kelompok2/screens/admin/presensi_kelas_list.dart';
 import 'package:mobile_kelompok2/screens/admin/pegawai_list_page.dart';
 import 'package:mobile_kelompok2/screens/admin/status_list_page.dart';
 import 'package:mobile_kelompok2/screens/admin/provinsi_list_page.dart';
 import 'package:mobile_kelompok2/screens/admin/kotakabupaten_list_page.dart';
 import 'package:mobile_kelompok2/screens/auth/login_page.dart';
-import 'package:mobile_kelompok2/screens/auth/buka_kelas.dart';
+
+// Hapus import dashboarddosen.dart jika AdminDashboard tidak menggunakannya
+// import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart';
+
+// Jika Anda memiliki model MataKuliah yang digunakan di tempat lain (misal di DosenDashboard),
+// sebaiknya definisikan di file terpisah seperti models/mata_kuliah.dart
+// dan impor di sini jika diperlukan oleh fungsionalitas lain.
+// Untuk AdminDashboard ini, MataKuliah tidak lagi langsung digunakan.
+// class MataKuliah { ... } // Hapus definisi ini dari sini
+
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
 
+  // Fungsi tambahJadwalUntukDosen ini tidak dipanggil oleh tombol yang ada di UI AdminDashboard.
+  // Jika Anda tidak menggunakannya, disarankan untuk menghapusnya agar kode lebih bersih.
   Future<void> tambahJadwalUntukDosen(BuildContext context) async {
     const url = 'https://ti054e01.agussbn.my.id/api/jadwal';
+    // PENTING: Token ini HARUS didapatkan secara dinamis setelah login,
+    // dan disimpan dengan aman (misal: flutter_secure_storage).
     const token = 'pQuALuRdwhD9RTAi7cUYmEREDOq594ckJMSQcjWdHKfxQthH2e99lfZGzUvtiJJC';
 
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        "judul": "Kelas Pagi Algoritma",
-        "tanggal": DateFormat('yyyy-MM-dd').format(DateTime.now()),
-        "jam_mulai": "08:00",
-        "jam_selesai": "10:00",
-        "id_dosen": 2 // <- sesuaikan ID dosen yang valid
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          "judul": "Kelas Pagi Algoritma",
+          "tanggal_jadwal": DateFormat('yyyy-MM-dd').format(DateTime.now()),
+          "jam_mulai": "08:00:00",
+          "jam_selesai": "10:00:00",
+          "id_dosen": 2, // <- sesuaikan ID dosen yang valid
+          "id_matkul": 1, // <- sesuaikan ID mata kuliah yang valid
+          "id_ruangan": 1, // <- sesuaikan ID ruangan yang valid
+          "pertemuan_ke": 1,
+        }),
+      );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Jadwal berhasil ditambahkan!')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menambah jadwal: ${response.body}')),
-      );
+      debugPrint('Add Jadwal API Status: ${response.statusCode}');
+      debugPrint('Add Jadwal API Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Jadwal berhasil ditambahkan!')),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal menambah jadwal: ${response.body}')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error adding jadwal: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error koneksi saat menambah jadwal: $e')),
+        );
+      }
     }
   }
 
@@ -89,19 +124,26 @@ class AdminDashboard extends StatelessWidget {
                   children: [
                     ElevatedButton.icon(
                       onPressed: () {
+                        // === PENTING: Panggil BukaKelasPage tanpa argumen selectedMatkul ===
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const BukaKelasPage()),
                         );
                       },
                       icon: const Icon(Icons.add),
-                      label: const Text("Tambah Jadwal Dosen"),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color.fromARGB(255, 255, 255, 255)),
+                      label: const Text("Tambah Mata Kuliah"), // Mengubah label
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                          foregroundColor: const Color(0xFF333333),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                     ),
-
                     IconButton(
-                      icon: const Icon(Icons.search, size: 26, color: Color.fromARGB(255, 255, 255, 255)),
-                      onPressed: () {},
+                      icon: const Icon(Icons.search, size: 26, color: Color(0xFF333333)),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Fitur pencarian belum diimplementasikan.')),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -111,71 +153,56 @@ class AdminDashboard extends StatelessWidget {
                 child: ListView(
                   padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                   children: [
-                    _buildProjectCard(
+                    // Menggunakan _buildAdminCard yang sudah disesuaikan
+                    _buildAdminCard(
                       context,
                       title: 'Pegawai',
-                      tasksCompleted: 12,
-                      totalTasks: 12,
-                      avatars: const [
-                        'https://placehold.co/40x40/FF69B4/FFFFFF?text=A',
-                        'https://placehold.co/40x40/DA70D6/FFFFFF?text=B',
-                      ],
-                      progress: 1.0,
+                      infoText: 'Mengelola data pegawai',
+                      icon: Icons.people,
                       cardColor: const Color(0xFF90CAF9),
                       onTap: () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const PegawaiListPage()));
                       },
                     ),
                     const SizedBox(height: 20),
-                    _buildProjectCard(
+                    _buildAdminCard(
                       context,
                       title: 'Kota/Kabupaten',
-                      tasksCompleted: 2,
-                      totalTasks: 8,
-                      avatars: const ['https://placehold.co/40x40/8A2BE2/FFFFFF?text=D'],
-                      progress: 0.25,
+                      infoText: 'Mengelola data kota dan kabupaten',
+                      icon: Icons.location_city,
                       cardColor: const Color(0xFF191970),
                       onTap: () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const KotaKabupatenListPage()));
                       },
                     ),
                     const SizedBox(height: 20),
-                    _buildProjectCard(
+                    _buildAdminCard(
                       context,
                       title: 'Provinsi',
-                      tasksCompleted: 4,
-                      totalTasks: 7,
-                      avatars: const [
-                        'https://placehold.co/40x40/FFD700/FFFFFF?text=E',
-                        'https://placehold.co/40x40/FFA500/FFFFFF?text=F',
-                      ],
-                      progress: 4 / 7,
+                      infoText: 'Mengelola data provinsi',
+                      icon: Icons.map,
                       cardColor: const Color(0xFF5F9EA0),
                       onTap: () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const ProvinsiListPage()));
                       },
                     ),
                     const SizedBox(height: 20),
-                    _buildProjectCard(
+                    _buildAdminCard(
                       context,
                       title: 'Status',
-                      tasksCompleted: 1,
-                      totalTasks: 1,
-                      avatars: const ['https://placehold.co/40x40/4CAF50/FFFFFF?text=G'],
-                      progress: 1.0,
+                      infoText: 'Mengelola status (misal: aktif, non-aktif)',
+                      icon: Icons.info_outline,
                       cardColor: Colors.teal,
                       onTap: () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const StatusListPage()));
                       },
                     ),
                     const SizedBox(height: 20),
-                    _buildProjectCard(
+                    _buildAdminCard(
                       context,
-                      title: 'Presensi',
-                      tasksCompleted: 1,
-                      totalTasks: 1,
-                      avatars: const ['https://placehold.co/40x40/2196F3/FFFFFF?text=H'],
-                      progress: 1.0,
+                      title: 'Presensi Kelas',
+                      infoText: 'Melihat dan mengelola presensi kelas',
+                      icon: Icons.check_circle_outline,
                       cardColor: Colors.blue,
                       onTap: () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const PresensiKelasListPage()));
@@ -193,13 +220,12 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildProjectCard(
+  // Widget _buildAdminCard yang sudah disesuaikan
+  Widget _buildAdminCard(
     BuildContext context, {
     required String title,
-    required int tasksCompleted,
-    required int totalTasks,
-    required List<String> avatars,
-    required double progress,
+    required String infoText,
+    required IconData icon,
     required Color cardColor,
     required VoidCallback onTap,
   }) {
@@ -218,46 +244,33 @@ class AdminDashboard extends StatelessWidget {
           height: 180,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: avatars.map((avatarUrl) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 4.0),
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Colors.white,
-                      child: ClipOval(
-                        child: Image.network(
-                          avatarUrl,
-                          width: 32,
-                          height: 32,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.person, color: Colors.grey, size: 24);
-                          },
-                        ),
-                      ),
+              Align(
+                alignment: Alignment.topRight,
+                child: Icon(icon, color: Colors.white.withOpacity(0.8), size: 40),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '$tasksCompleted/$totalTasks tasks • ${(progress * 100).toInt()}%',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    infoText,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -284,9 +297,9 @@ class AdminDashboard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavBarItem(Icons.home_outlined, 'Home', true),
-          _buildNavBarItem(Icons.folder_open, 'Projects', false),
-          _buildNavBarItem(Icons.notifications_none, 'Notifications', false),
-          _buildNavBarItem(Icons.person_outline, 'Profile', false),
+          _buildNavBarItem(Icons.folder_open, 'Data', false),
+          _buildNavBarItem(Icons.notifications_none, 'Notifikasi', false),
+          _buildNavBarItem(Icons.person_outline, 'Profil', false),
         ],
       ),
     );
