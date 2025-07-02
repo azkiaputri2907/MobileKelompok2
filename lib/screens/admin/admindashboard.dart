@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Tetap dibutuhkan jika ada formatting tanggal/waktu di fungsi lain
+import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:table_calendar/table_calendar.dart'; // Import table_calendar
 
 // Pastikan import ini menunjuk ke BukaKelasPage yang sudah dimodifikasi
 import 'package:mobile_kelompok2/screens/auth/buka_kelas.dart';
@@ -14,18 +15,26 @@ import 'package:mobile_kelompok2/screens/admin/provinsi_list_page.dart';
 import 'package:mobile_kelompok2/screens/admin/kotakabupaten_list_page.dart';
 import 'package:mobile_kelompok2/screens/auth/login_page.dart';
 
-// Hapus import dashboarddosen.dart jika AdminDashboard tidak menggunakannya
-// import 'package:mobile_kelompok2/screens/dosen/dashboarddosen.dart';
+class AdminDashboard extends StatefulWidget {
+  final String userName; // Tambahkan properti userName
 
-// Jika Anda memiliki model MataKuliah yang digunakan di tempat lain (misal di DosenDashboard),
-// sebaiknya definisikan di file terpisah seperti models/mata_kuliah.dart
-// dan impor di sini jika diperlukan oleh fungsionalitas lain.
-// Untuk AdminDashboard ini, MataKuliah tidak lagi langsung digunakan.
-// class MataKuliah { ... } // Hapus definisi ini dari sini
+  const AdminDashboard({super.key, required this.userName}); // Perbarui konstruktor
 
+  @override
+  State<AdminDashboard> createState() => _AdminDashboardState();
+}
 
-class AdminDashboard extends StatelessWidget {
-  const AdminDashboard({super.key});
+class _AdminDashboardState extends State<AdminDashboard> {
+  // Tambahkan variabel untuk kalender
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay; // Nullable, karena awalnya tidak ada yang terpilih
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDay = _focusedDay; // Set tanggal terpilih awal ke tanggal hari ini
+  }
 
   // Fungsi tambahJadwalUntukDosen ini tidak dipanggil oleh tombol yang ada di UI AdminDashboard.
   // Jika Anda tidak menggunakannya, disarankan untuk menghapusnya agar kode lebih bersih.
@@ -88,9 +97,9 @@ class AdminDashboard extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Admin Dashboard',
-          style: TextStyle(color: Color(0xFF333333), fontWeight: FontWeight.bold),
+        title: Text( // Gunakan Text widget biasa untuk judul
+          'Selamat Datang Admin Pegawai', // Menghilangkan tanda seru
+          style: const TextStyle(color: Color(0xFF333333), fontWeight: FontWeight.bold, fontSize: 18),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -124,7 +133,6 @@ class AdminDashboard extends StatelessWidget {
                   children: [
                     ElevatedButton.icon(
                       onPressed: () {
-                        // === PENTING: Panggil BukaKelasPage tanpa argumen selectedMatkul ===
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const BukaKelasPage()),
@@ -149,11 +157,68 @@ class AdminDashboard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              // ==================== KALENDER DAN KARTU ADMIN SEKARANG BERGULIR BERSAMA ====================
+              Expanded( // Expanded membungkus ListView agar ListView mengambil sisa ruang
+                child: ListView( // ListView tunggal untuk semua konten yang dapat digulir
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding), // Padding diterapkan di sini
                   children: [
-                    // Menggunakan _buildAdminCard yang sudah disesuaikan
+                    // Kalender
+                    Card(
+                      elevation: 5,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: TableCalendar(
+                        firstDay: DateTime.utc(2020, 1, 1),
+                        lastDay: DateTime.utc(2030, 12, 31),
+                        focusedDay: _focusedDay,
+                        calendarFormat: _calendarFormat,
+                        selectedDayPredicate: (day) {
+                          return isSameDay(_selectedDay, day);
+                        },
+                        onDaySelected: (selectedDay, focusedDay) {
+                          setState(() {
+                            _selectedDay = selectedDay;
+                            _focusedDay = focusedDay;
+                          });
+                          debugPrint('Tanggal terpilih: $selectedDay');
+                        },
+                        onPageChanged: (focusedDay) {
+                          _focusedDay = focusedDay;
+                        },
+                        onFormatChanged: (format) {
+                          if (_calendarFormat != format) {
+                            setState(() {
+                              _calendarFormat = format;
+                            });
+                          }
+                        },
+                        headerStyle: const HeaderStyle(
+                          formatButtonVisible: false,
+                          titleCentered: true,
+                          leftChevronIcon: Icon(Icons.chevron_left, color: Color(0xFF333333)),
+                          rightChevronIcon: Icon(Icons.chevron_right, color: Color(0xFF333333)),
+                          titleTextStyle: TextStyle(color: Color(0xFF333333), fontWeight: FontWeight.bold, fontSize: 17),
+                        ),
+                        calendarStyle: CalendarStyle(
+                          outsideDaysVisible: false,
+                          todayDecoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          selectedDecoration: const BoxDecoration(
+                            color: Color(0xFF191970),
+                            shape: BoxShape.circle,
+                          ),
+                          selectedTextStyle: const TextStyle(color: Colors.white),
+                          weekendTextStyle: const TextStyle(color: Colors.red),
+                          holidayTextStyle: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20), // Jarak antara kalender dan kartu pertama
+
+                    // Kartu Admin
                     _buildAdminCard(
                       context,
                       title: 'Pegawai',
@@ -208,7 +273,7 @@ class AdminDashboard extends StatelessWidget {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const PresensiKelasListPage()));
                       },
                     ),
-                    const SizedBox(height: 80),
+                    const SizedBox(height: 80), // Jarak padding di bagian bawah
                   ],
                 ),
               ),
@@ -220,15 +285,15 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  // Widget _buildAdminCard yang sudah disesuaikan
+  // Widget _buildAdminCard dan _buildBottomNavBar tetap sama
   Widget _buildAdminCard(
-    BuildContext context, {
-    required String title,
-    required String infoText,
-    required IconData icon,
-    required Color cardColor,
-    required VoidCallback onTap,
-  }) {
+      BuildContext context, {
+        required String title,
+        required String infoText,
+        required IconData icon,
+        required Color cardColor,
+        required VoidCallback onTap,
+      }) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double cardPadding = screenWidth * 0.05;
 

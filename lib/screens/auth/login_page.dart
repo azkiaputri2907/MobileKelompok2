@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // Untuk Admin Pegawai, mungkin tidak perlu refId, atau bisa diteruskan jika ada
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            MaterialPageRoute(builder: (_) => const AdminDashboard(userName: '',)),
           );
         } else {
           _showLoginFailedDialog('Peran pengguna tidak dikenal. Silakan hubungi administrator.');

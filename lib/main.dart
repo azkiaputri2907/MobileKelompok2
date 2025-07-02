@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         // Rute '/dashboard_dosen' telah dihapus karena navigasi ke DashboardDosen
         // kini menangani passing data (userName) secara langsung melalui MaterialPageRoute dari LoginPage.
-        '/dashboard_admin': (context) => const AdminDashboard(), // Rute untuk Admin Dashboard
+        '/dashboard_admin': (context) => const AdminDashboard(userName: '',), // Rute untuk Admin Dashboard
       },
     );
   }

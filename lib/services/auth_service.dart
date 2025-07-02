@@ -66,7 +66,7 @@ class AuthService {
   }
 
   /// Ambil user dari API endpoint /data-user dengan token Bearer
-  Future<Map<String, dynamic>?> getUserData() async {
+  Future<Map<String, dynamic>?> getUserData(String s) async {
     final token = await _storage.read(key: 'token');
     if (token == null) return null;
 
@@ -119,7 +119,7 @@ class AuthService {
   }
 
   /// Ambil token yang tersimpan dari secure storage
-  Future<String?> getToken() async {
+  Future<String?> getToken(String s) async {
     return await _storage.read(key: 'token');
   }
 }

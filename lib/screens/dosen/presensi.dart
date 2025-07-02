@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class PresensiKelasPage extends StatefulWidget {
-  const PresensiKelasPage({super.key});
+  const PresensiKelasPage({super.key, required int idKelasMk, required String namaMataKuliah, required String namaKelas, required String tokenDosen});
 
   @override
   State<PresensiKelasPage> createState() => _PresensiKelasPageState();
